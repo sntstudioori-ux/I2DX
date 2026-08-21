@@ -40,7 +40,7 @@ Win32 ウィンドウ、Direct3D 11 デバイス、スワップチェーン、�
 
 #### 使用例
 ```cpp
-#include "Dx11library/App.hpp"
+#include "App.hpp"
 
 int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int)
 {
@@ -91,7 +91,7 @@ WIC (Windows Imaging Component) を使用して、PNG、JPEG、BMP などの画�
 
 #### 使用例
 ```cpp
-#include "Dx11library/Dx11library.hpp"
+#include "Dx11library.hpp"
 
 library::Renderer2D renderer;
 renderer.Initialize(app.Device());
@@ -136,7 +136,7 @@ Z座標および遠近投影（パースペクティブ射影）に対応した3
 
 #### 使用例
 ```cpp
-#include "Dx11library/Dx11library.hpp"
+#include "Dx11library.hpp"
 
 library::Renderer3D renderer3D;
 renderer3D.Initialize(app.Device());
@@ -188,7 +188,7 @@ tex.Draw(renderer3D, app,
 
 #### 使用例
 ```cpp
-#include "Dx11library/Dx11library.hpp"
+#include "Dx11library.hpp"
 
 library::FontRenderer fontRenderer;
 if (!fontRenderer.Initialize(app)) return 1;
@@ -240,7 +240,7 @@ Windows の MCI (Media Control Interface) サブシステムを利用して MIDI
 
 #### 使用例
 ```cpp
-#include "Dx11library/Dx11library.hpp"
+#include "Dx11library.hpp"
 
 // 1. オーディオエンジンの初期化
 library::AudioEngine audioEngine;
@@ -307,7 +307,7 @@ cmake --build build --config debug
 ### 使用例
 
 ```cpp
-#include "Dx11library/Dx11library.hpp"
+#include "Dx11library.hpp"
 
 library::Keyboard keyboard;
 keyboard.Initialize(app.Window());
