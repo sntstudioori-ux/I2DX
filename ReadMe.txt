@@ -47,7 +47,7 @@ Scroll down for the English version.
 　変なものは入っていないと思いますが、自己責任で使用してください。
 　
 　このライブラリは自由に改変が可能です。
-　このライブラリの一部に意味のある改変改変（ソースコードの変更、機能の追加・削除など）をした場合に限り、再配布を認めます。
+　このライブラリの一部に意味のある改変（ソースコードの変更、機能の追加・削除など）をした場合に限り、再配布を認めます。
 　このライブラリを改変せずに、もしくはほぼ実質的な意味のない改変（コメントの改変など）しかせずに、再配布することは禁止します。
 　ある程度大きな改変をして、一般公開する場合は、GitHubでのフォークにしていただけるとありがたいです。
 　その際は、作者への連絡もお願いします。
@@ -78,7 +78,7 @@ Scroll down for the English version.
 　I Recommend to Read Japanese Version.
 　
 ■1. Introduction / Greeting
-　Thank you very much for downloading the ITDX library.
+　Thank you very much for downloading the I2DX library.
 　
 　This library may possibly, maybe, be of use to you.
 　The reason for this vague wording is that I've only implemented the things I personally wanted.
