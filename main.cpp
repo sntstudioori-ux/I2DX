@@ -36,22 +36,22 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int)
         return 1;
     }
 
-    library::Renderer3D render3D;
+    // library::Renderer3D render3D;
 
-    if (!render3D.Initialize(app.Device()))
-    {
-        MessageBoxW(0, L"DirectXの初期化に失敗したようです（3D）。", L"th06 library", MB_OK | MB_ICONERROR);
-        return 1;
-    }
+    // if (!render3D.Initialize(app.Device()))
+    // {
+    //     MessageBoxW(0, L"DirectXの初期化に失敗したようです（3D）。", L"th06 library", MB_OK | MB_ICONERROR);
+    //     return 1;
+    // }
 
 
-    library::Camera3D camera;
+    // library::Camera3D camera;
 
-    camera.Reset();
+    // camera.Reset();
 	
-	library::Camera3D *Camera = &camera;
+	// library::Camera3D *Camera = &camera;
 
-    render3D.SetCamera(Camera);
+    // render3D.SetCamera(Camera);
 
     library::FontRenderer fontRenderer;
 
