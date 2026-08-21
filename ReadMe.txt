@@ -71,7 +71,7 @@ Scroll down for the English version.
 　GitHub: https://github.com/sntstudioori-ux/I2DX
 　eMailは、個人の方に連絡したほうが、反応がある確率が高いです。
 
-■Einglish version
+■English version
 　＊Note:
 　This text has been translated by a Japanese speaker using generative AI.
 　It may contain errors.
