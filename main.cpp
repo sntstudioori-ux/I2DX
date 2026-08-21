@@ -1,6 +1,6 @@
 #include <windows.h>
 
-#include "Dx11library/Dx11library.hpp"
+#include "Dx11library.hpp"
 
 // Minimal standalone application: creates a 640 x 480 DirectX 11 window,
 // clears it every frame, and exits when the user closes the window.
@@ -8,7 +8,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int)
 {
     library::App app;
     library::AppOptions Options;
-    Options.title = L"th06 library test";
+    Options.title = L"library test";
     Options.width = 640;
     Options.height = 480;
     Options.vsync = true;
@@ -17,14 +17,14 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int)
     Options.windowed = true;
     if (!app.Initialize(instance, Options))
     {
-        MessageBoxW(0, L"DirectX 11の初期化に失敗したようです。", L"th06 library", MB_OK | MB_ICONERROR);
+        MessageBoxW(0, L"DirectX 11の初期化に失敗したようです。", L"library", MB_OK | MB_ICONERROR);
         return 1;
     }
 
     library::AudioEngine audio;
     if (!audio.Initialize())
     {
-        MessageBoxW(0, L"XAudioの初期化に失敗したようです。", L"th06 library", MB_OK | MB_ICONERROR);
+        MessageBoxW(0, L"XAudioの初期化に失敗したようです。", L"library", MB_OK | MB_ICONERROR);
         return 1;
     }
 
@@ -32,26 +32,25 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int)
 
     if (!render2D.Initialize(app.Device()))
     {
-        MessageBoxW(0, L"DirectXの初期化に失敗したようです。", L"th06 library", MB_OK | MB_ICONERROR);
+        MessageBoxW(0, L"DirectXの初期化に失敗したようです。", L"library", MB_OK | MB_ICONERROR);
         return 1;
     }
 
-    // library::Renderer3D render3D;
+    library::Renderer3D render3D;
 
-    // if (!render3D.Initialize(app.Device()))
-    // {
-    //     MessageBoxW(0, L"DirectXの初期化に失敗したようです（3D）。", L"th06 library", MB_OK | MB_ICONERROR);
-    //     return 1;
-    // }
+    if (!render3D.Initialize(app.Device()))
+    {
+        MessageBoxW(0, L"DirectXの初期化に失敗したようです（3D）。", L"th06 library", MB_OK | MB_ICONERROR);
+        return 1;
+    }
 
+    library::Camera3D camera;
 
-    // library::Camera3D camera;
+    camera.Reset();
 
-    // camera.Reset();
-	
-	// library::Camera3D *Camera = &camera;
+    library::Camera3D *Camera = &camera;
 
-    // render3D.SetCamera(Camera);
+    render3D.SetCamera(Camera);
 
     library::FontRenderer fontRenderer;
 
@@ -91,4 +90,3 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int)
     }
     return 0;
 }
-
