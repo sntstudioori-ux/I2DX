@@ -40,7 +40,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int)
 
     if (!render3D.Initialize(app.Device()))
     {
-        MessageBoxW(0, L"DirectXの初期化に失敗したようです（3D）。", L"th06 library", MB_OK | MB_ICONERROR);
+        MessageBoxW(0, L"DirectXの初期化に失敗したようです（3D）。", L"library", MB_OK | MB_ICONERROR);
         return 1;
     }
 
@@ -56,7 +56,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int)
 
     if (!fontRenderer.Initialize(app))
     {
-        MessageBoxW(0, L"DirectWriteの初期化に失敗したようです。", L"th06 library", MB_OK | MB_ICONERROR);
+        MessageBoxW(0, L"DirectWriteの初期化に失敗したようです。", L"library", MB_OK | MB_ICONERROR);
         return 1;
     }
 
@@ -64,7 +64,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int)
 
     if (!keyboard.Initialize(app.Window()))
     {
-        MessageBoxW(0, L"キー入力の初期化に失敗したようです。", L"th06 library", MB_OK | MB_ICONERROR);
+        MessageBoxW(0, L"キー入力の初期化に失敗したようです。", L"library", MB_OK | MB_ICONERROR);
         return 1;
     }
 
