@@ -6,6 +6,8 @@
 　ReadMe れあどめ～　　　　　　　　　　SNT Studio 代表 SR
 -------------------------------------------------------------
 
+Scroll down for the English version.
+
 ■１．はじめに挨拶
 　この度は、ITDXライブラリをダウンロードしていただき、誠にありがとうございます。
 　
@@ -19,6 +21,7 @@
 ■２．このライブラリって何？
 　DirectX11を、C++で（ほんの少し）便利に扱えるようにしたライブラリです。
 　主に、Windows向けのゲーム制作を補助する目的で作られました。
+　詳しい機能もHowToUse.mdをお読みください。
 　
 　軽量＋シンプルであること主眼においた、超軽量ライブラリになっています。
 　また、#includeするファイルを選べるので、必要のない機能を除外して、さらに軽量化を図ることもできます。
@@ -68,3 +71,71 @@
 　GitHub: https://github.com/sntstudioori-ux/I2DX
 　eMailは、個人の方に連絡したほうが、反応がある確率が高いです。
 
+■Einglish version
+　＊Note:
+　This text has been translated by a Japanese speaker using generative AI.
+　It may contain errors.
+　I Recommend to Read Japanese Version.
+　
+■1. Introduction / Greeting
+　Thank you very much for downloading the ITDX library.
+　
+　This library may possibly, maybe, be of use to you.
+　The reason for this vague wording is that I've only implemented the things I personally wanted.
+　
+　For detailed usage instructions, please read HowToUse.md.
+　It doesn't cover everything, and some parts are a bit out of order, so please bear with it.
+　It's been made with simplicity in mind, so I think reading the code should make most things clear.
+
+■2. What is this library?
+　It's a library that makes DirectX11 (slightly) more convenient to use with C++.
+　It was created mainly to assist with making Windows games.
+　Please also read HowToUse.md for detailed features.
+　
+　It's an ultra-lightweight library built with a focus on being light and simple.
+　You can also choose which files to #include, so you can exclude features you don't need to make it even lighter.
+　
+　Being lightweight is the flip side of having fewer features.
+　That said, since it's something I use myself, I think it's reasonably practical.
+
+■3. Things We'd Like You to Understand
+　This library has only been verified to work on Windows.
+　Based on its specifications, it should work on Windows 7, Windows 10, and Windows 11.
+　Also, to use the 3D features, a Direct3D-compatible GPU is required.
+　
+　This library may contain bugs. In fact, it probably does.
+　If you find a bug, I'd appreciate it if you either contact me and ask for a fix, or fix it yourself.
+　It would be even more appreciated if you could submit your fix to my GitHub.
+　Even if a fix request comes in, I can't guarantee I'll fix it, but I'll do my best to respond.
+
+■4. Terms of Use
+　By publishing a work that uses this library, or a modified version of this library,
+　you are considered to have agreed to these Terms of Use.
+　
+　I bear no responsibility whatsoever for any damages resulting from the use of this library.
+　I don't believe there's anything strange included, but please use it at your own risk.
+　
+　This library may be freely modified.
+　Redistribution is permitted only if meaningful modifications (changes to the source code, addition/removal of features, etc.) have been made to part of this library.
+　Redistributing this library without modification, or with only essentially meaningless modifications (such as changes to comments), is prohibited.
+　If you make a fairly significant modification and release it publicly, I'd appreciate it if you did so as a fork on GitHub.
+　In that case, please also contact the author.
+　
+　If you want to pass the original data on to someone else, please do so by, for example, providing a link to GitHub.
+　However, unmodified redistribution is permitted only in the case where all distribution sites for this library have disappeared.
+　
+　When publishing a work that uses this library, or a modified version of the library, please include a copyright notice.
+　The notice can be written anywhere—in a Special Thanks section, at the end of a ReadMe, or elsewhere—it doesn't matter.
+　For the notice, the standard "Copyright (c) 2026 SNT Studio" or "Copyright (c) 2026 SR" is recommended.
+　This notice format may change in the future.
+　
+　Additionally, these Terms of Use may be changed without prior notice.
+　In principle, any revised license will apply only to versions released with that revised license attached, going forward.
+
+■5. Contact Information, etc.
+　Circle eMail: sntstudio.ori@gmail.com
+　Personal eMail: sr.ori.jp@gmail.com
+　Website: https://snt-studio.jimdofree.com/
+　note: https://note.com/prime_sntstudio
+　GitHub: https://github.com/sntstudioori-ux/I2DX
+　You're more likely to get a response by contacting the personal eMail address.
