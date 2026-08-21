@@ -1,4 +1,4 @@
-# Th06Dx11 -- Standalone DirectX 11 & Audio Library
+# Dx11library -- Standalone DirectX 11 & Audio Library
 
 Windows 用の最小限の DirectX 11 描画およびオーディオ再生ライブラリです。
 軽量化を重視して設計されています。
@@ -19,7 +19,7 @@ Windows 用の最小限の DirectX 11 描画およびオーディオ再生ライ
 
 ## 1. アプリケーション & ウィンドウ管理 (`App`)
 
-### `th06::library::App`
+### `library::App`
 Win32 ウィンドウ、Direct3D 11 デバイス、スワップチェーン、およびバックバッファのライフサイクルを管理します。
 
 #### 主要メンバー関数
@@ -40,12 +40,12 @@ Win32 ウィンドウ、Direct3D 11 デバイス、スワップチェーン、�
 
 #### 使用例
 ```cpp
-#include "Th06Dx11/App.hpp"
+#include "Dx11library/App.hpp"
 
 int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int)
 {
-    th06::library::App app;
-    th06::library::AppOptions options;
+    library::App app;
+    library::AppOptions options;
     options.title = L"My Game";
     options.width = 640;
     options.height = 480;
@@ -60,7 +60,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int)
         }
 
         // フレーム開始（背景色を青っぽくクリア）
-        if (app.BeginFrame(th06::library::Color(0.1f, 0.2f, 0.4f)))
+        if (app.BeginFrame(library::Color(0.1f, 0.2f, 0.4f)))
         {
             // ここで描画処理を行う
 
@@ -75,10 +75,10 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int)
 
 ## 2. 2D グラフィックス (`Texture` & `Renderer2D`)
 
-### `th06::library::Renderer2D`
+### `library::Renderer2D`
 スプライトを描画するためのシェーダーや頂点バッファを管理します。
 
-### `th06::library::Texture`
+### `library::Texture`
 WIC (Windows Imaging Component) を使用して、PNG、JPEG、BMP などの画像ファイルを読み込み、描画します。
 
 #### 主要メンバー関数（`Texture`）
@@ -91,16 +91,16 @@ WIC (Windows Imaging Component) を使用して、PNG、JPEG、BMP などの画�
 
 #### 使用例
 ```cpp
-#include "Th06Dx11/Th06Dx11.hpp"
+#include "Dx11library/Dx11library.hpp"
 
-th06::library::Renderer2D renderer;
+library::Renderer2D renderer;
 renderer.Initialize(app.Device());
 
-th06::library::Texture background;
+library::Texture background;
 background.LoadFile(app.Device(), L"img/background.png");
 
 // 描画ループ内（BeginFrame と EndFrame の間）
-th06::library::RectF destRect(0.0f, 0.0f, 640.0f, 480.0f);
+library::RectF destRect(0.0f, 0.0f, 640.0f, 480.0f);
 background.Draw(renderer, app, destRect);
 ```
 
@@ -111,10 +111,10 @@ background.Draw(renderer, app, destRect);
 
 ## 3. 3D グラフィックス & カメラ (`Texture3D` & `Renderer3D` & `Camera3D`)
 
-### `th06::library::Renderer3D`
+### `library::Renderer3D`
 Z座標および遠近投影（パースペクティブ射影）に対応した3D描画用のレンダラーです。デフォルトでは Z=0 の平面が通常の 2D 画面上の座標とピクセル単位で1:1に一致するように自動計算されます。
 
-### `th06::library::Texture3D`
+### `library::Texture3D`
 `Texture` クラスを継承しており、X, Y に加えて Z 座標を指定して描画できる 3D 対応のテクスチャクラスです。
 
 #### 主要メンバー関数（`Texture3D`）
@@ -123,7 +123,7 @@ Z座標および遠近投影（パースペクティブ射影）に対応した3
 *   `bool Draw(Renderer3D &renderer, const App &app, const RectF3D &destination, const RECT *source = nullptr, const Color &color = Color(1.0f, 1.0f, 1.0f, 1.0f)) const`
     *   3D範囲指定用の構造体 `RectF3D` を使用して描画します。
 
-### `th06::library::Camera3D`
+### `library::Camera3D`
 画面中央をピボット（回転中心）として、3D空間におけるカメラ位置の移動（スクロール、ズーム）や回転（ピッチ、ヨー、ロール）を行う軽量なカメラ管理クラスです。
 
 #### 主要メンバー関数（`Camera3D`）
@@ -136,15 +136,15 @@ Z座標および遠近投影（パースペクティブ射影）に対応した3
 
 #### 使用例
 ```cpp
-#include "Th06Dx11/Th06Dx11.hpp"
+#include "Dx11library/Dx11library.hpp"
 
-th06::library::Renderer3D renderer3D;
+library::Renderer3D renderer3D;
 renderer3D.Initialize(app.Device());
 
-th06::library::Texture3D tex;
+library::Texture3D tex;
 tex.LoadFile(app.Device(), L"img/background_3d.png");
 
-th06::library::Camera3D camera;
+library::Camera3D camera;
 renderer3D.SetCamera(&camera); // レンダラーにカメラをアタッチ
 
 // --- 描画ループ内（BeginFrame と EndFrame の間） ---
@@ -166,10 +166,10 @@ tex.Draw(renderer3D, app,
 
 ## 4. テキスト描画 (`Font` & `FontRenderer`)
 
-### `th06::library::Font`
+### `library::Font`
 `Font` はフォント、サイズ、色、透明度、グラデーションを保持する再利用可能なテキストスタイルです。`FontRenderer` は Direct2D / DirectWrite の共有リソースと描画セッションを管理します。複数の `Font` を同時に使用できます。
 
-### `th06::library::FontRenderer`
+### `library::FontRenderer`
 アプリケーションごとに一つ作成します。`Begin` と `End` の間で `Font::Draw` を呼び出します。テキストは通常、2D/3D の描画後、`App::EndFrame` の前に描画してください。
 
 #### 主要メンバー関数
@@ -188,17 +188,17 @@ tex.Draw(renderer3D, app,
 
 #### 使用例
 ```cpp
-#include "Th06Dx11/Th06Dx11.hpp"
+#include "Dx11library/Dx11library.hpp"
 
-th06::library::FontRenderer fontRenderer;
+library::FontRenderer fontRenderer;
 if (!fontRenderer.Initialize(app)) return 1;
 
 // システムフォント、または TTF/OTF を読み込む
-th06::library::Font myFont;
+library::Font myFont;
 myFont.LoadFile(fontRenderer, L"fonts/my_custom_font.ttf", L"My Font", 24.0f);
 // myFont.LoadSystem(fontRenderer, L"MS Gothic", 24.0f);
-myFont.SetGradient(th06::library::Color(1.0f, 0.9f, 0.2f),
-                   th06::library::Color(1.0f, 0.2f, 0.2f));
+myFont.SetGradient(library::Color(1.0f, 0.9f, 0.2f),
+                   library::Color(1.0f, 0.2f, 0.2f));
 myFont.SetOpacity(0.9f);
 
 // 3. 描画ループ内（BeginFrame と EndFrame の間）
@@ -206,7 +206,7 @@ if (app.BeginFrame(...))
 {
     if (fontRenderer.Begin(app))
     {
-        myFont.Draw(fontRenderer, L"Score: 123450", th06::library::RectF(10.0f, 10.0f, 400.0f, 50.0f));
+        myFont.Draw(fontRenderer, L"Score: 123450", library::RectF(10.0f, 10.0f, 400.0f, 50.0f));
         fontRenderer.End();
     }
 
@@ -220,13 +220,13 @@ fontRenderer.Shutdown();
 
 ## 5. オーディオ再生 (`AudioEngine` & `WavSound` & `MidiPlayer`)
 
-### `th06::library::AudioEngine`
+### `library::AudioEngine`
 XAudio2 エンジンおよびマスタリングボイスを統括・管理します。
 
-### `th06::library::WavSound`
+### `library::WavSound`
 WAVサウンドデータをメモリにロードし、XAudio2 経由で再生する効果音・BGM用クラスです。
 
-### `th06::library::MidiPlayer`
+### `library::MidiPlayer`
 Windows の MCI (Media Control Interface) サブシステムを利用して MIDI ファイルを再生するクラスです。
 
 #### 主要メンバー関数（`WavSound` & `MidiPlayer` 共通）
@@ -240,17 +240,17 @@ Windows の MCI (Media Control Interface) サブシステムを利用して MIDI
 
 #### 使用例
 ```cpp
-#include "Th06Dx11/Th06Dx11.hpp"
+#include "Dx11library/Dx11library.hpp"
 
 // 1. オーディオエンジンの初期化
-th06::library::AudioEngine audioEngine;
+library::AudioEngine audioEngine;
 audioEngine.Initialize();
 
 // 2. 音源のロード
-th06::library::WavSound seShoot;
+library::WavSound seShoot;
 seShoot.LoadFile(audioEngine, L"sound/shoot.wav");
 
-th06::library::MidiPlayer bgmTitle;
+library::MidiPlayer bgmTitle;
 bgmTitle.LoadFile(L"bgm/title.mid");
 
 // 3. 再生
@@ -307,26 +307,26 @@ cmake --build build --config debug
 ### 使用例
 
 ```cpp
-#include "Th06Dx11/Th06Dx11.hpp"
+#include "Dx11library/Dx11library.hpp"
 
-th06::library::Keyboard keyboard;
+library::Keyboard keyboard;
 keyboard.Initialize(app.Window());
 
 while (app.PumpMessages())
 {
     keyboard.Update();
 
-    if (keyboard.IsDown(th06::library::Key::Left))
+    if (keyboard.IsDown(library::Key::Left))
     {
         // 左キーを押している間
     }
 
-    if (keyboard.WasPressed(th06::library::Key::Space))
+    if (keyboard.WasPressed(library::Key::Space))
     {
         // スペースキーを押した瞬間
     }
 
-    if (keyboard.WasReleased(th06::library::Key::Space))
+    if (keyboard.WasReleased(library::Key::Space))
     {
         // スペースキーを離した瞬間
     }
