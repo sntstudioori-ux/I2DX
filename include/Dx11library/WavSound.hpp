@@ -22,6 +22,10 @@ public:
     void Release();
 
     bool Play(bool loop = false);
+<<<<<<< HEAD
+=======
+	bool PlayLoop(double loopStartSeconds, double loopEndSeconds);
+>>>>>>> abb6f4c (v1.01)
     void Stop();
     void Pause();
     void Resume();

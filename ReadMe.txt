@@ -2,14 +2,15 @@
 　I2DXライブラリ
                               (c)opyright SNT Studio
 
-                                                 ver 1.00
+
+                                                 ver 1.01
 　ReadMe れあどめ～　　　　　　　　　　SNT Studio 代表 SR
 -------------------------------------------------------------
 
 Scroll down for the English version.
 
 ■１．はじめに挨拶
-　この度は、I2DXライブラリをダウンロードしていただき、誠にありがとうございます。
+　この度は、ITDXライブラリをダウンロードしていただき、誠にありがとうございます。
 　
 　このライブラリは、多分メイビーあなたの役に立つ可能性があります。
 　曖昧な言い方をしている理由は、私が欲しいと思ったものだけを実装しているからです。
@@ -34,6 +35,10 @@ Scroll down for the English version.
 　仕様上、Windows7, Windows10, Windows11で動作すると思われます。
 　また、3D機能を使用するためには、Direct3Dに対応したGPUが必要です。
 　
+　アップデートを行う際は、極力前のバージョンとの互換性を持たせます。（そのままライブラリだけ差し替えられるように）
+　ですが、時折互換性のないアップデートを行わざるを得ないときがあるかもしれません。
+　その時はReadMeの更新内容に書いておきますので、アップデートのときは確認をお願いします。
+　
 　このライブラリは、バグを含む可能性があります。多分含んでいます。
 　もしバグを見つけた場合は、私に連絡を入れて修正を頼むか、自力で修正していただけるとありがたいです。
 　修正したやつを私のGitHubのとこに入れてもらえると、もっとありがたいです。
@@ -48,6 +53,7 @@ Scroll down for the English version.
 　
 　このライブラリは自由に改変が可能です。
 　このライブラリの一部に意味のある改変（ソースコードの変更、機能の追加・削除など）をした場合に限り、再配布を認めます。
+　
 　このライブラリを改変せずに、もしくはほぼ実質的な意味のない改変（コメントの改変など）しかせずに、再配布することは禁止します。
 　ある程度大きな改変をして、一般公開する場合は、GitHubでのフォークにしていただけるとありがたいです。
 　その際は、作者への連絡もお願いします。
@@ -63,6 +69,14 @@ Scroll down for the English version.
 　また、この利用規約は事前の告知無しで変更される可能性があります。
 　変更後のライセンスが適用されるのは、原則として変更後のライセンスが付属されたバージョン以降とします。
 　
+■６．変更点
+　・1.00
+　　ライブラリのファイル、ReadMe、HowToUseを追加しました。
+　
+　・1.01
+　　WavSoundで、ループ範囲を秒数で指定できるようにしました。
+　　ReadMeに加筆しました。
+　
 ■５．連絡先など
 　サークルのeMail: sntstudio.ori@gmail.com
 　私個人のeMail: sr.ori.jp@gmail.com
@@ -76,9 +90,10 @@ Scroll down for the English version.
 　This text has been translated by a Japanese speaker using generative AI.
 　It may contain errors.
 　I Recommend to Read Japanese Version.
+　Updates to the English version will be delayed.
 　
 ■1. Introduction / Greeting
-　Thank you very much for downloading the I2DX library.
+　Thank you very much for downloading the ITDX library.
 　
 　This library may possibly, maybe, be of use to you.
 　The reason for this vague wording is that I've only implemented the things I personally wanted.
