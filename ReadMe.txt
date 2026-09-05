@@ -10,7 +10,7 @@
 Scroll down for the English version.
 
 ■１．はじめに挨拶
-　この度は、ITDXライブラリをダウンロードしていただき、誠にありがとうございます。
+　この度は、I2DXライブラリをダウンロードしていただき、誠にありがとうございます。
 　
 　このライブラリは、多分メイビーあなたの役に立つ可能性があります。
 　曖昧な言い方をしている理由は、私が欲しいと思ったものだけを実装しているからです。
@@ -31,7 +31,7 @@ Scroll down for the English version.
 　ただ、自分が使うものなので、ある程度実用に足るものにはなっていると思います。
 　
 ■３．ご理解いただきたいこと
-　このライブラリは、Windowsでのみ動作確認をしております。
+　このライブラリは、Windows11でのみ動作確認をしております。
 　仕様上、Windows7, Windows10, Windows11で動作すると思われます。
 　また、3D機能を使用するためには、Direct3Dに対応したGPUが必要です。
 　
@@ -93,7 +93,7 @@ Scroll down for the English version.
 　Updates to the English version will be delayed.
 　
 ■1. Introduction / Greeting
-　Thank you very much for downloading the ITDX library.
+　Thank you very much for downloading the I2DX library.
 　
 　This library may possibly, maybe, be of use to you.
 　The reason for this vague wording is that I've only implemented the things I personally wanted.
