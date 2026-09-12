@@ -29,7 +29,7 @@ bool MidiPlayer::LoadFile(const wchar_t *path)
     Release();
 
     wchar_t aliasBuffer[64];
-    swprintf_s(aliasBuffer, 64, L"Th06Midi_%u_%u", GetCurrentProcessId(), ++instanceCounter_);
+    swprintf_s(aliasBuffer, 64, L"Dx11libraryMidi_%u_%u", GetCurrentProcessId(), ++instanceCounter_);
     alias_ = aliasBuffer;
 
     wchar_t command[1024];
@@ -53,9 +53,11 @@ bool MidiPlayer::LoadFile(const wchar_t *path)
 bool MidiPlayer::LoadFile(const char *path)
 {
     if (!path) return false;
-    wchar_t wpath[MAX_PATH];
-    MultiByteToWideChar(CP_ACP, 0, path, -1, wpath, MAX_PATH);
-    return LoadFile(wpath);
+    int length = MultiByteToWideChar(CP_ACP, 0, path, -1, 0, 0);
+    if (length <= 0) return false;
+    std::wstring wpath(static_cast<size_t>(length), L'\0');
+    if (MultiByteToWideChar(CP_ACP, 0, path, -1, &wpath[0], length) <= 0) return false;
+    return LoadFile(wpath.c_str());
 }
 
 bool MidiPlayer::LoadMemory(const void *data, unsigned int size)
@@ -67,7 +69,7 @@ bool MidiPlayer::LoadMemory(const void *data, unsigned int size)
     if (GetTempPathW(MAX_PATH, tempDir) == 0) return false;
 
     wchar_t tempFile[MAX_PATH];
-    swprintf_s(tempFile, MAX_PATH, L"%sTh06Midi_%u_%u.mid", tempDir, GetCurrentProcessId(), ++instanceCounter_);
+    swprintf_s(tempFile, MAX_PATH, L"%sDx11libraryMidi_%u_%u.mid", tempDir, GetCurrentProcessId(), ++instanceCounter_);
 
     FILE *f = 0;
     if (_wfopen_s(&f, tempFile, L"wb") != 0 || !f) {

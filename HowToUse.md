@@ -91,7 +91,7 @@ WIC (Windows Imaging Component) を使用して、PNG、JPEG、BMP などの画�
 
 #### 使用例
 ```cpp
-#include "Dx11library.hpp"
+#include "Dx11library/Dx11library.hpp"
 
 library::Renderer2D renderer;
 renderer.Initialize(app.Device());
@@ -136,7 +136,7 @@ Z座標および遠近投影（パースペクティブ射影）に対応した3
 
 #### 使用例
 ```cpp
-#include "Dx11library.hpp"
+#include "Dx11library/Dx11library.hpp"
 
 library::Renderer3D renderer3D;
 renderer3D.Initialize(app.Device());
@@ -188,7 +188,7 @@ tex.Draw(renderer3D, app,
 
 #### 使用例
 ```cpp
-#include "Dx11library.hpp"
+#include "Dx11library/Dx11library.hpp"
 
 library::FontRenderer fontRenderer;
 if (!fontRenderer.Initialize(app)) return 1;
@@ -231,6 +231,7 @@ Windows の MCI (Media Control Interface) サブシステムを利用して MIDI
 
 #### 主要メンバー関数（`WavSound` & `MidiPlayer` 共通）
 *   `bool Play(bool loop = false)`: 再生を開始します。`loop` を `true` にするとループ再生されます。
+*   `bool PlayLoop(double loopStartSeconds, double loopEndSeconds)`: 指定した秒数の範囲をループ再生します。
 *   `void Stop()`: 再生を停止します。
 *   `void Pause()` / `void Resume()`: 一時停止と再開。
 *   `void SetVolume(float volume)`: 音量を設定します（`0.0f` 〜 `1.0f`）。
@@ -240,7 +241,7 @@ Windows の MCI (Media Control Interface) サブシステムを利用して MIDI
 
 #### 使用例
 ```cpp
-#include "Dx11library.hpp"
+#include "Dx11library/Dx11library.hpp"
 
 // 1. オーディオエンジンの初期化
 library::AudioEngine audioEngine;
@@ -274,6 +275,7 @@ while (app.PumpMessages())
 バイナリファイルを一括で読み込み・書き込みするシンプルなユーティリティ関数です。
 
 *   `bool ReadBinaryFile(const char *path, std::vector<unsigned char> *data)`
+*   `bool ReadBinaryFile(const wchar_t *path, std::vector<unsigned char> *data)`
 *   `bool WriteBinaryFile(const char *path, const void *data, unsigned int size)`
 
 ---
@@ -307,7 +309,7 @@ cmake --build build --config debug
 ### 使用例
 
 ```cpp
-#include "Dx11library.hpp"
+#include "Dx11library/Dx11library.hpp"
 
 library::Keyboard keyboard;
 keyboard.Initialize(app.Window());

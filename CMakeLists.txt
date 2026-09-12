@@ -46,20 +46,14 @@ if(MSVC)
 endif()
 
 # --- アプリケーション定義 (library) ---
-# ライブラリ以外 (.cpp, .h) のソースファイルを自動検出
-file(GLOB_RECURSE APP_SOURCES CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/*.h"
-)
-
-# ライブラリのソース・ヘッダー(src, include)およびビルド・一時用フォルダ(build, out, .vs)を除外
-list(FILTER APP_SOURCES EXCLUDE REGEX "^${CMAKE_CURRENT_SOURCE_DIR}/(src|include|build|out|\\.vs)/")
-
-# 検出したファイルで実行ファイルを生成
-add_executable(library WIN32 ${APP_SOURCES})
+# アプリケーションのエントリーポイントは明示的に指定し、
+# ビルドディレクトリ内の生成物を誤って取り込まないようにする。
+add_executable(library WIN32 main.cpp)
 
 target_compile_features(library PRIVATE cxx_std_17)
-target_include_directories(library PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(library PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 target_link_libraries(library PRIVATE Dx11library::Dx11library)
 
 if(MSVC)
