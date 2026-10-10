@@ -3,7 +3,7 @@
                               (c)opyright SNT Studio
 
 
-                                                 ver 1.02
+                                                 ver 1.03
 　ReadMe れあどめ～　　　　　　　　　　SNT Studio 代表 SR
 -------------------------------------------------------------
 
@@ -80,7 +80,7 @@ Scroll down for the English version.
 ■５．連絡先など
 　サークルのeMail: sntstudio.ori@gmail.com
 　私個人のeMail: sr.ori.jp@gmail.com
-　ホームページ: https://snt-studio.jimdofree.com/
+　ホームページ: https://sntstudioori-ux.github.io/
 　note: https://note.com/prime_sntstudio
 　GitHub: https://github.com/sntstudioori-ux/I2DX
 　eMailは、個人の方に連絡したほうが、反応がある確率が高いです。
@@ -92,83 +92,81 @@ Scroll down for the English version.
 　I recommend reading the Japanese version.
 　Updates to the English version may be delayed.
 　
-■1. Introduction / Greeting
-　Thank you very much for downloading the I2DX library.
-　
-　This library may, perhaps, be useful to you.
-　The reason for this vague wording is that I have only implemented the things I personally wanted.
-　
-　For detailed usage instructions, please read HowToUse.md.
-　It does not explain everything, and some parts may be out of order, but please bear with it.
-　It was designed with simplicity in mind, so reading the code should make most things understandable.
-　
+Thank you very much for downloading the I2DX library.
+
+This library may, maybe, possibly be useful to you.
+The reason I'm being vague is that I've only implemented the things I wanted for myself.
+
+For detailed usage, please read HowToUse.md.
+It doesn't explain everything, and some parts are in a jumbled order, so please bear with me.
+I've tried to keep things simple, so you should be able to figure most of it out by reading the code.
+
 ■2. What is this library?
-　This is a library that makes DirectX 11 slightly more convenient to use with C++.
-　It was created mainly to assist with Windows game development.
-　Please also read HowToUse.md for details about its features.
-　
-　It is an ultra-lightweight library focused on being lightweight and simple.
-　You can also choose which files to #include, allowing you to exclude unnecessary features and make it even lighter.
-　
-　Being lightweight is the flip side of having fewer features.
-　That said, since it is something I use myself, I believe it is practical enough for general use.
-　
-■3. Things We Would Like You to Understand
-　This library has only been tested on Windows 11.
-　Based on its specifications, it is expected to work on Windows 7, Windows 10, and Windows 11.
-　A Direct3D-compatible GPU is also required to use the 3D features.
-　
-　When updating the library, we try to maintain compatibility with previous versions as much as possible, so that the library can be replaced directly.
-　However, there may occasionally be cases where an incompatible update is unavoidable.
-　If that happens, it will be described in the changes listed in the ReadMe, so please check them when updating.
-　
-　This library may contain bugs. In fact, it probably does.
-　If you find a bug, I would appreciate it if you contacted me to request a fix or fixed it yourself.
-　I would be even more grateful if you submitted your fix to my GitHub.
-　Even if I receive a request for a fix, I cannot promise that I will implement it, but I will do my best to respond.
-　
+
+It's a library that makes DirectX11 (just a little) more convenient to use from C++.
+It was created mainly to assist with game development for Windows.
+For details on its features, please also read HowToUse.md.
+
+It's an ultra-lightweight library, with its main focus on being light and simple.
+You can also choose which files to #include, so you can leave out features you don't need and slim it down even further.
+
+Being lightweight is the flip side of having few features.
+That said, since I made it for my own use, I think it's reasonably practical.
+
+■3. Things I'd like you to understand
+
+I have only verified that this library works on Windows 11.
+Based on its specifications, it should work on Windows 7, Windows 10, and Windows 11.
+Also, a Direct3D-compatible GPU is required to use the 3D features.
+
+When updating, I'll maintain compatibility with previous versions as much as possible (so that you can simply swap in the new library files).
+However, there may occasionally be times when I have no choice but to make an incompatible update.
+In that case, I'll note it in the changelog in the ReadMe, so please check it when updating.
+
+This library may contain bugs. It probably does.
+If you find a bug, I'd appreciate it if you either contact me and ask me to fix it, or fix it yourself.
+It would be even better if you could push your fix to my GitHub.
+Even if you send me a fix request, I can't promise I'll fix it myself, but I'll do my best to respond.
+
 ■4. Terms of Use
-　By publishing a work that uses this library, or a modified version of it, you are considered to have agreed to these terms of use.
-　
-　I accept no responsibility whatsoever for any damages caused by using this library.
-　I do not believe that it contains anything unusual, but please use it at your own risk.
-　
-　This library may be freely modified.
-　Redistribution is permitted only when meaningful modifications—such as source-code changes or the addition or removal of features—have been made to some part of this library.
-　
-　Redistribution without modification, or with only essentially meaningless modifications such as comment changes, is prohibited.
-　If you make a reasonably substantial modification and publish it, I would appreciate it if you did so as a fork on GitHub.
-　Please also contact the author in that case.
-　
-　If you want to give the original data to someone, please provide a link to GitHub or use a similar method.
-　However, unmodified redistribution is permitted only if all distribution sites for this library have disappeared.
-　
-　When publishing a work that uses this library, or a modified version of it, please include a copyright notice.
-　The notice may be placed anywhere, such as in a Special Thanks section or at the end of the ReadMe.
-　The recommended notices are “Copyright (c) 2026 SNT Studio” or “Copyright (c) 2026 SR”.
-　This recommendation may change in the future.
-　
-　These terms of use may also be changed without prior notice.
-　In principle, a revised license will apply from the version that includes the revised license onward.
-　
-■6. Changes
-　• 1.02
-　　Fixed many areas that could have caused bugs.
-　　Fixed an issue that prevented compilation due to a synchronization mistake with GitHub.
-　　Corrected several typos.
-　　Changed the order in which versions are listed in the ReadMe.txt change log.
-　
-　• 1.01
-　　Added support for specifying the loop range in seconds in WavSound.
-　　Added more information to the ReadMe.
-　
-　• 1.00
-　　Added the library files, ReadMe, and HowToUse.
-　
-■5. Contact Information, etc.
-　Circle eMail: sntstudio.ori@gmail.com
-　Personal eMail: sr.ori.jp@gmail.com
-　Website: https://snt-studio.jimdofree.com/
-　note: https://note.com/prime_sntstudio
-　GitHub: https://github.com/sntstudioori-ux/I2DX
-　You are more likely to receive a response if you contact me at my personal eMail address.
+
+By publishing a work that uses this library, or a modified version of this library, you are deemed to have agreed to these terms of use.
+
+I take no responsibility whatsoever for any damages arising from the use of this library.
+I don't think there's anything strange in it, but please use it at your own risk.
+
+You are free to modify this library.
+Redistribution is also allowed, but I'd like what you redistribute to be limited to versions in which you've made some modification.
+
+If you publish a work that uses this library, or a modified version of this library, I'd like you to include a copyright notice.
+The format is up to you: putting it in the Special Thanks, at the end of the ReadMe, or anywhere else is fine.
+
+Also, these terms of use may be changed without prior notice.
+As a general rule, the changed license applies only to versions that ship with the changed license.
+
+■6. Changelog
+
+・1.03
+　Relaxed the terms of use.
+
+・1.02
+　Fixed many parts that were likely to cause bugs.
+　Fixed an issue where the code failed to compile due to a GitHub sync error.
+　Fixed several typos.
+　Changed the order in which versions are listed in the ReadMe.txt changelog.
+
+・1.01
+　Made it possible to specify the loop range in seconds in WavSound.
+　Added to the ReadMe.
+
+・1.00
+　Added the library files, ReadMe, and HowToUse.
+
+■5. Contact information, etc.
+
+Circle email: sntstudio.ori@gmail.com
+My personal email: sr.ori.jp@gmail.com
+Homepage: https://sntstudioori-ux.github.io/
+note: https://note.com/prime_sntstudio
+GitHub: https://github.com/sntstudioori-ux/I2DX
+You're more likely to get a response if you contact my personal email.
