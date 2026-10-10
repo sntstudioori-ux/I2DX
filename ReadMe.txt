@@ -53,16 +53,20 @@ Scroll down for the English version.
 　
 　このライブラリは自由に改変が可能です。
 　再配布も可能ですが、再配布する物は何か改変を加えた物だけにしていただきたいです。
+　まぁ、変更しなくても文句は言いませんが…ね？
+　機能的な変更を加えていただきたいです。
 　
 　このライブラリを使用した作品、または改変したライブラリを公開する場合は、著作権表記を行っていただきたいです。
 　表記の仕方は、Special Thanksに書くでも、ReadMeの末尾に書くでもなんでも構いません。
+　なりにサークルの名前とかを書いてもらえると、喜びます。
 　
 　また、この利用規約は事前の告知無しで変更される可能性があります。
 　変更後のライセンスが適用されるのは、原則として変更後のライセンスが付属されたバージョン以降とします。
 　
-■６．変更点
+■５．変更点
 　・1.03
 　　利用規約を緩くしました。
+　　再配布の条件とかを…
 
 　・1.02
 　　バグを誘発しそうな部分を沢山修正しました。
@@ -77,7 +81,7 @@ Scroll down for the English version.
 　・1.00
 　　ライブラリのファイル、ReadMe、HowToUseを追加しました。
 　
-■５．連絡先など
+■６．連絡先など
 　サークルのeMail: sntstudio.ori@gmail.com
 　私個人のeMail: sr.ori.jp@gmail.com
 　ホームページ: https://sntstudioori-ux.github.io/
@@ -144,7 +148,7 @@ The format is up to you: putting it in the Special Thanks, at the end of the Rea
 Also, these terms of use may be changed without prior notice.
 As a general rule, the changed license applies only to versions that ship with the changed license.
 
-■6. Changelog
+■5. Changelog
 
 ・1.03
 　Relaxed the terms of use.
@@ -162,7 +166,7 @@ As a general rule, the changed license applies only to versions that ship with t
 ・1.00
 　Added the library files, ReadMe, and HowToUse.
 
-■5. Contact information, etc.
+■6. Contact information, etc.
 
 Circle email: sntstudio.ori@gmail.com
 My personal email: sr.ori.jp@gmail.com
