@@ -7,6 +7,12 @@
 namespace library
 {
 
+    enum class FullscreenMode
+    {
+        Exclusive,
+        Borderless
+    };
+
     struct Color
     {
         Color(float red = 0.0f, float green = 0.0f, float blue = 0.0f, float alpha = 1.0f)
@@ -23,7 +29,7 @@ namespace library
     struct AppOptions
     {
         AppOptions()
-            : width(640), height(480), title(L"DirectX 11 application"), windowed(true), vsync(true), targetFps(60), antialias(true)
+            : width(640), height(480), title(L"DirectX 11 application"), windowed(true), fullscreenMode(FullscreenMode::Borderless), vsync(true), targetFps(60), antialias(true)
         {
         }
 
@@ -31,6 +37,7 @@ namespace library
         unsigned int height;
         const wchar_t *title;
         bool windowed;
+        FullscreenMode fullscreenMode;
         bool vsync;
         unsigned int targetFps;
         bool antialias;
@@ -50,6 +57,7 @@ namespace library
         bool PumpMessages();
         bool BeginFrame(const Color &clearColor = Color());
         bool EndFrame();
+        bool ResolveMultisample();
 
         bool IsActive() const { return active_; }
         bool ShouldClose() const { return closing_; }
@@ -59,6 +67,7 @@ namespace library
         float ViewportOffsetX() const { return viewport_.TopLeftX; }
         float ViewportOffsetY() const { return viewport_.TopLeftY; }
         bool Antialias() const { return options_.antialias; }
+        unsigned int SampleCount() const { return sampleCount_; }
         HWND Window() const { return window_; }
         ID3D11Device *Device() const { return device_; }
         ID3D11DeviceContext *Context() const { return context_; }
@@ -68,6 +77,9 @@ namespace library
         static LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
         bool CreateDeviceResources();
         bool CreateBackBufferView();
+        bool CreateMultisampleTarget();
+        void ReleaseMultisampleTarget();
+        bool ResolveMultisampleTarget();
         bool Resize(unsigned int width, unsigned int height);
         void LimitFrameRate();
         void ReleaseBackBufferView();
@@ -78,6 +90,11 @@ namespace library
         ID3D11DeviceContext *context_;
         IDXGISwapChain *swapChain_;
         ID3D11RenderTargetView *renderTargetView_;
+        ID3D11Texture2D *multisampleTexture_;
+        ID3D11RenderTargetView *multisampleRenderTargetView_;
+        ID3D11RasterizerState *multisampleRasterizerState_;
+        unsigned int sampleCount_;
+        bool multisampleResolved_;
         D3D11_VIEWPORT viewport_;
         AppOptions options_;
         unsigned int width_;

@@ -19,6 +19,8 @@ void Release(T *&object)
 
 App::App()
     : instance_(0), window_(0), device_(0), context_(0), swapChain_(0), renderTargetView_(0),
+      multisampleTexture_(0), multisampleRenderTargetView_(0), multisampleRasterizerState_(0),
+      sampleCount_(1), multisampleResolved_(false),
       width_(0), height_(0), bufferWidth_(0), bufferHeight_(0), viewportScale_(1.0f),
       frameCounterStarted_(false), comInitialized_(false), active_(true), closing_(false)
 {
@@ -59,13 +61,14 @@ bool App::Initialize(HINSTANCE instance, const AppOptions &options)
         return false;
     }
 
+    const bool exclusive = !options_.windowed && options_.fullscreenMode == FullscreenMode::Exclusive;
     const DWORD style = options_.windowed ? (WS_OVERLAPPEDWINDOW & ~WS_MAXIMIZEBOX) : WS_POPUP;
     RECT rect = { 0, 0, static_cast<LONG>(width_), static_cast<LONG>(height_) };
     int x = CW_USEDEFAULT;
     int y = CW_USEDEFAULT;
     if (options_.windowed) {
         AdjustWindowRect(&rect, style, FALSE);
-    } else {
+    } else if (options_.fullscreenMode == FullscreenMode::Borderless) {
         MONITORINFO monitor = { sizeof(monitor) };
         HMONITOR display = MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY);
         GetMonitorInfoW(display, &monitor);
@@ -74,12 +77,34 @@ bool App::Initialize(HINSTANCE instance, const AppOptions &options)
         y = rect.top;
         bufferWidth_ = static_cast<unsigned int>(rect.right - rect.left);
         bufferHeight_ = static_cast<unsigned int>(rect.bottom - rect.top);
+    } else {
+        MONITORINFO monitor = { sizeof(monitor) };
+        HMONITOR display = MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY);
+        GetMonitorInfoW(display, &monitor);
+        x = monitor.rcMonitor.left;
+        y = monitor.rcMonitor.top;
+        rect.right = static_cast<LONG>(width_);
+        rect.bottom = static_cast<LONG>(height_);
+        bufferWidth_ = width_;
+        bufferHeight_ = height_;
     }
     window_ = CreateWindowExW(0, kWindowClass, options_.title, style, x, y,
                               rect.right - rect.left, rect.bottom - rect.top, 0, 0, instance_, this);
     if (!window_ || !CreateDeviceResources()) {
         Shutdown();
         return false;
+    }
+    if (exclusive) {
+        DXGI_MODE_DESC mode = {};
+        mode.Width = width_;
+        mode.Height = height_;
+        mode.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        mode.RefreshRate.Numerator = 0;
+        mode.RefreshRate.Denominator = 0;
+        if (FAILED(swapChain_->SetFullscreenState(TRUE, 0)) || FAILED(swapChain_->ResizeTarget(&mode))) {
+            Shutdown();
+            return false;
+        }
     }
     ShowWindow(window_, SW_SHOW);
     UpdateWindow(window_);
@@ -88,6 +113,9 @@ bool App::Initialize(HINSTANCE instance, const AppOptions &options)
 
 void App::Shutdown()
 {
+    if (swapChain_) swapChain_->SetFullscreenState(FALSE, 0);
+    ReleaseMultisampleTarget();
+    Release(multisampleRasterizerState_);
     ReleaseBackBufferView();
     Release(swapChain_);
     if (context_) {
@@ -121,7 +149,6 @@ bool App::CreateDeviceResources()
     swapDescription.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapDescription.OutputWindow = window_;
     swapDescription.SampleDesc.Count = 1;
-    // Borderless fullscreen keeps desktop scaling/aspect handling predictable.
     swapDescription.Windowed = TRUE;
     swapDescription.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
@@ -137,8 +164,56 @@ bool App::CreateDeviceResources()
         result = D3D11CreateDeviceAndSwapChain(0, D3D_DRIVER_TYPE_WARP, 0, flags,
                                                 featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION,
                                                 &swapDescription, &swapChain_, &device_, &createdLevel, &context_);
-    return SUCCEEDED(result) && CreateBackBufferView();
+    if (FAILED(result) || !CreateBackBufferView()) return false;
+    sampleCount_ = 1;
+    if (options_.antialias) {
+        UINT quality = 0;
+        if (SUCCEEDED(device_->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, 4, &quality)) && quality) sampleCount_ = 4;
+        else if (SUCCEEDED(device_->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, 2, &quality)) && quality) sampleCount_ = 2;
+    }
+    if (sampleCount_ > 1 && !CreateMultisampleTarget()) sampleCount_ = 1;
+    return true;
 }
+
+bool App::CreateMultisampleTarget()
+{
+    if (!multisampleRasterizerState_) {
+        D3D11_RASTERIZER_DESC rasterizer = {};
+        rasterizer.FillMode = D3D11_FILL_SOLID;
+        rasterizer.CullMode = D3D11_CULL_BACK;
+        rasterizer.DepthClipEnable = TRUE;
+        rasterizer.MultisampleEnable = TRUE;
+        if (FAILED(device_->CreateRasterizerState(&rasterizer, &multisampleRasterizerState_))) return false;
+    }
+    D3D11_TEXTURE2D_DESC desc = {};
+    desc.Width = bufferWidth_; desc.Height = bufferHeight_; desc.MipLevels = 1; desc.ArraySize = 1;
+    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; desc.SampleDesc.Count = sampleCount_;
+    desc.SampleDesc.Quality = 0; desc.Usage = D3D11_USAGE_DEFAULT; desc.BindFlags = D3D11_BIND_RENDER_TARGET;
+    HRESULT result = device_->CreateTexture2D(&desc, 0, &multisampleTexture_);
+    if (SUCCEEDED(result)) result = device_->CreateRenderTargetView(multisampleTexture_, 0, &multisampleRenderTargetView_);
+    if (FAILED(result)) { ReleaseMultisampleTarget(); sampleCount_ = 1; return false; }
+    return true;
+}
+
+void App::ReleaseMultisampleTarget()
+{
+    Release(multisampleRenderTargetView_);
+    Release(multisampleTexture_);
+}
+
+bool App::ResolveMultisampleTarget()
+{
+    if (sampleCount_ == 1 || multisampleResolved_) return true;
+    context_->OMSetRenderTargets(0, 0, 0);
+    ID3D11Texture2D *backBuffer = 0;
+    HRESULT result = swapChain_->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void **>(&backBuffer));
+    if (SUCCEEDED(result)) context_->ResolveSubresource(backBuffer, 0, multisampleTexture_, 0, DXGI_FORMAT_R8G8B8A8_UNORM);
+    Release(backBuffer);
+    if (SUCCEEDED(result)) multisampleResolved_ = true;
+    return SUCCEEDED(result);
+}
+
+bool App::ResolveMultisample() { return ResolveMultisampleTarget(); }
 
 bool App::CreateBackBufferView()
 {
@@ -168,14 +243,17 @@ bool App::Resize(unsigned int width, unsigned int height)
     if (!swapChain_ || !width || !height) return true;
     bufferWidth_ = width;
     bufferHeight_ = height;
-    ReleaseBackBufferView();
+    ReleaseMultisampleTarget();
     context_->OMSetRenderTargets(0, 0, 0);
+    ReleaseBackBufferView();
     if (FAILED(swapChain_->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0))) return false;
     if (options_.windowed) {
         width_ = width;
         height_ = height;
     }
-    return CreateBackBufferView();
+    if (!CreateBackBufferView()) return false;
+    if (sampleCount_ > 1 && !CreateMultisampleTarget()) sampleCount_ = 1;
+    return true;
 }
 
 bool App::PumpMessages()
@@ -196,15 +274,18 @@ bool App::BeginFrame(const Color &clearColor)
 {
     if (!context_ || !renderTargetView_ || closing_) return false;
     const float color[] = { clearColor.r, clearColor.g, clearColor.b, clearColor.a };
-    context_->OMSetRenderTargets(1, &renderTargetView_, 0);
+    multisampleResolved_ = false;
+    ID3D11RenderTargetView *target = multisampleRenderTargetView_ ? multisampleRenderTargetView_ : renderTargetView_;
+    context_->OMSetRenderTargets(1, &target, 0);
     context_->RSSetViewports(1, &viewport_);
-    context_->ClearRenderTargetView(renderTargetView_, color);
+    context_->RSSetState(multisampleRasterizerState_);
+    context_->ClearRenderTargetView(target, color);
     return true;
 }
 
 bool App::EndFrame()
 {
-    if (!swapChain_ || FAILED(swapChain_->Present(options_.vsync ? 1 : 0, 0))) return false;
+    if (!swapChain_ || !ResolveMultisampleTarget() || FAILED(swapChain_->Present(options_.vsync ? 1 : 0, 0))) return false;
     LimitFrameRate();
     return true;
 }

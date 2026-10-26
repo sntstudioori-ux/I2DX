@@ -3,7 +3,7 @@
                               (c)opyright SNT Studio
 
 
-                                                 ver 1.03
+                                                 ver 1.04
 　ReadMe れあどめ～　　　　　　　　　　SNT Studio 代表 SR
 -------------------------------------------------------------
 
@@ -64,6 +64,11 @@ Scroll down for the English version.
 　変更後のライセンスが適用されるのは、原則として変更後のライセンスが付属されたバージョン以降とします。
 　
 ■５．変更点
+　・1.04
+　　フルスクリーン時に、指定の解像度で描画されなくなっていた問題を修正しました。
+　　なお、描画解像度の問題ですので、プログラム内の座標には影響はないと思われます。多分。
+　　ついでに、ボーダーレスウィンドウに加えて、排他的フルスクリーンも使えるようにしました。
+
 　・1.03
 　　利用規約を緩くしました。
 　　再配布の条件とかを…
@@ -149,6 +154,10 @@ Also, these terms of use may be changed without prior notice.
 As a general rule, the changed license applies only to versions that ship with the changed license.
 
 ■5. Changelog
+・1.04
+　Fixed an issue where the game would not render at the specified resolution when in full-screen mode.
+　Note that since this is a rendering resolution issue, it should not affect the coordinates used within the program. (Probably.)
+　Additionally, I have added support for exclusive full-screen mode, alongside the existing borderless window mode.
 
 ・1.03
 　Relaxed the terms of use.

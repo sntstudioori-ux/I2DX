@@ -116,6 +116,9 @@ bool FontRenderer::End(const App &app)
     if (!context_ || !drawing_) return false;
     HRESULT result = context_->EndDraw();
     if (SUCCEEDED(result)) {
+        if (!const_cast<App &>(app).ResolveMultisample()) result = E_FAIL;
+    }
+    if (SUCCEEDED(result)) {
         context_->SetTarget(target_);
         context_->SetTransform(D2D1::Matrix3x2F::Identity());
         context_->BeginDraw();

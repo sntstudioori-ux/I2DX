@@ -36,7 +36,8 @@ Win32 ウィンドウ、Direct3D 11 デバイス、スワップチェーン、�
 
 #### ヘルパー構造体
 *   `Color(float red, float green, float blue, float alpha = 1.0f)`: RGBAカラー。
-*   `AppOptions`: ウィンドウの幅、高さ、タイトル、ウィンドウモード、VSync の有無などを設定する構造体。
+*   `AppOptions`: ウィンドウの幅、高さ、タイトル、ウィンドウモード、VSync の有無などを設定する構造体。`windowed = false` のときは `fullscreenMode` で `FullscreenMode::Exclusive`（指定解像度への排他的フルスクリーン）または `FullscreenMode::Borderless`（デスクトップ解像度のボーダーレス表示）を選べます。既定値は従来互換の `Borderless` です。
+*   `antialias = true`: 対応する場合は2xまたは4x MSAAで2D/3D描画を行い、文字描画にもアンチエイリアスを適用します。実際のD3Dサンプル数は `App::SampleCount()` で確認できます。
 
 #### 使用例
 ```cpp
@@ -49,6 +50,8 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int)
     options.title = L"My Game";
     options.width = 640;
     options.height = 480;
+    options.windowed = false;
+    options.fullscreenMode = library::FullscreenMode::Exclusive;
 
     if (!app.Initialize(instance, options)) return 1;
 
