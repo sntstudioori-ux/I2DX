@@ -62,31 +62,35 @@ bool App::Initialize(HINSTANCE instance, const AppOptions &options)
     }
 
     const bool exclusive = !options_.windowed && options_.fullscreenMode == FullscreenMode::Exclusive;
+    bool exclusiveModeAvailable = exclusive;
     const DWORD style = options_.windowed ? (WS_OVERLAPPEDWINDOW & ~WS_MAXIMIZEBOX) : WS_POPUP;
     RECT rect = { 0, 0, static_cast<LONG>(width_), static_cast<LONG>(height_) };
     int x = CW_USEDEFAULT;
     int y = CW_USEDEFAULT;
     if (options_.windowed) {
         AdjustWindowRect(&rect, style, FALSE);
-    } else if (options_.fullscreenMode == FullscreenMode::Borderless) {
-        MONITORINFO monitor = { sizeof(monitor) };
+    } else {
+        MONITORINFOEXW monitor = {};
+        monitor.cbSize = sizeof(monitor);
         HMONITOR display = MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY);
         GetMonitorInfoW(display, &monitor);
         rect = monitor.rcMonitor;
         x = rect.left;
         y = rect.top;
-        bufferWidth_ = static_cast<unsigned int>(rect.right - rect.left);
-        bufferHeight_ = static_cast<unsigned int>(rect.bottom - rect.top);
-    } else {
-        MONITORINFO monitor = { sizeof(monitor) };
-        HMONITOR display = MonitorFromPoint(POINT{ 0, 0 }, MONITOR_DEFAULTTOPRIMARY);
-        GetMonitorInfoW(display, &monitor);
-        x = monitor.rcMonitor.left;
-        y = monitor.rcMonitor.top;
-        rect.right = static_cast<LONG>(width_);
-        rect.bottom = static_cast<LONG>(height_);
-        bufferWidth_ = width_;
-        bufferHeight_ = height_;
+        DEVMODEW currentMode = {};
+        currentMode.dmSize = sizeof(currentMode);
+        if (EnumDisplaySettingsW(monitor.szDevice, ENUM_CURRENT_SETTINGS, &currentMode) &&
+            currentMode.dmPelsWidth && currentMode.dmPelsHeight) {
+            bufferWidth_ = currentMode.dmPelsWidth;
+            bufferHeight_ = currentMode.dmPelsHeight;
+        } else {
+            bufferWidth_ = static_cast<unsigned int>(rect.right - rect.left);
+            bufferHeight_ = static_cast<unsigned int>(rect.bottom - rect.top);
+            // Without the physical display mode, exclusive presentation could
+            // select a virtualized desktop size and leave the monitor without
+            // a usable signal. Keep the full-size windowed swap chain instead.
+            exclusiveModeAvailable = false;
+        }
     }
     window_ = CreateWindowExW(0, kWindowClass, options_.title, style, x, y,
                               rect.right - rect.left, rect.bottom - rect.top, 0, 0, instance_, this);
@@ -94,20 +98,24 @@ bool App::Initialize(HINSTANCE instance, const AppOptions &options)
         Shutdown();
         return false;
     }
-    if (exclusive) {
-        DXGI_MODE_DESC mode = {};
-        mode.Width = width_;
-        mode.Height = height_;
-        mode.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        mode.RefreshRate.Numerator = 0;
-        mode.RefreshRate.Denominator = 0;
-        if (FAILED(swapChain_->SetFullscreenState(TRUE, 0)) || FAILED(swapChain_->ResizeTarget(&mode))) {
+    ShowWindow(window_, SW_SHOW);
+    UpdateWindow(window_);
+    if (exclusiveModeAvailable) {
+        IDXGIOutput *output = 0;
+        SetForegroundWindow(window_);
+        HRESULT result = swapChain_->GetContainingOutput(&output);
+        if (SUCCEEDED(result)) result = swapChain_->SetFullscreenState(TRUE, output);
+        if (SUCCEEDED(result)) {
+            BOOL fullscreen = FALSE;
+            result = swapChain_->GetFullscreenState(&fullscreen, 0);
+            if (SUCCEEDED(result) && !fullscreen) result = DXGI_ERROR_NOT_CURRENTLY_AVAILABLE;
+        }
+        if (output) output->Release();
+        if (FAILED(result)) {
             Shutdown();
             return false;
         }
     }
-    ShowWindow(window_, SW_SHOW);
-    UpdateWindow(window_);
     return true;
 }
 
@@ -151,6 +159,9 @@ bool App::CreateDeviceResources()
     swapDescription.SampleDesc.Count = 1;
     swapDescription.Windowed = TRUE;
     swapDescription.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+    // Required for ResizeTarget to switch the display mode of a windowed
+    // swap chain when entering exclusive fullscreen.
+    swapDescription.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
     const D3D_FEATURE_LEVEL featureLevels[] = {
         D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0
@@ -226,7 +237,9 @@ bool App::CreateBackBufferView()
     viewport_.TopLeftY = 0.0f;
     const float scaleX = static_cast<float>(bufferWidth_) / static_cast<float>(width_);
     const float scaleY = static_cast<float>(bufferHeight_) / static_cast<float>(height_);
-    viewportScale_ = options_.windowed ? 1.0f : (scaleX < scaleY ? scaleX : scaleY);
+    // Keep the logical render area at the requested aspect ratio in every
+    // presentation mode. Any unused area is letterboxed by centering it.
+    viewportScale_ = scaleX < scaleY ? scaleX : scaleY;
     viewport_.Width = static_cast<float>(width_) * viewportScale_;
     viewport_.Height = static_cast<float>(height_) * viewportScale_;
     viewport_.TopLeftX = (static_cast<float>(bufferWidth_) - viewport_.Width) * 0.5f;
@@ -247,10 +260,6 @@ bool App::Resize(unsigned int width, unsigned int height)
     context_->OMSetRenderTargets(0, 0, 0);
     ReleaseBackBufferView();
     if (FAILED(swapChain_->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0))) return false;
-    if (options_.windowed) {
-        width_ = width;
-        height_ = height;
-    }
     if (!CreateBackBufferView()) return false;
     if (sampleCount_ > 1 && !CreateMultisampleTarget()) sampleCount_ = 1;
     return true;
@@ -323,7 +332,7 @@ LRESULT CALLBACK App::WindowProc(HWND window, UINT message, WPARAM wParam, LPARA
     }
     if (app) {
         if (message == WM_ACTIVATEAPP) app->active_ = wParam != 0;
-        if (message == WM_SIZE && wParam != SIZE_MINIMIZED)
+        if (message == WM_SIZE && wParam != SIZE_MINIMIZED && app->options_.windowed)
             app->Resize(LOWORD(lParam), HIWORD(lParam));
         if (message == WM_CLOSE) {
             app->closing_ = true;
