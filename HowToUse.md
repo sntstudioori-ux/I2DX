@@ -24,11 +24,13 @@ library::App app;
 
 - `width`, `height`: 論理描画領域の幅と高さ（ピクセル）。ウィンドウをリサイズしてもこの座標系を保ち、描画領域はアスペクト比を維持して中央に表示されます。
 - `title`: ウィンドウタイトル。ワイド文字列を指定します。
-- `windowed`: `true` なら通常のウィンドウ、`false` ならプライマリーモニター全体を使うボーダーレス表示です。
-- `fullscreenMode`: 現在定義されている値は `FullscreenMode::Borderless` です。
+- `windowed`: `true` なら通常のウィンドウ、`false` なら `fullscreenMode` で選んだフルスクリーン表示です。
+- `fullscreenMode`: `FullscreenMode::Borderless` はデスクトップ解像度のボーダーレス表示、`FullscreenMode::Exclusive` はDXGIの排他的フルスクリーンです。指定解像度と現在のモニター解像度の比率が一致する場合、指定解像度へ切り替えてモニター全体に拡大します。比率が異なる場合はモニター解像度の描画バッファを使い、指定した論理描画領域を比率を保って最大サイズに拡大します。この場合、上下または左右に黒帯が入ります。排他的切替が利用できない場合は `Initialize` が `false` を返します。
 - `vsync`: `true` なら `Present` 時に垂直同期を有効にします。この場合、`targetFps` によるソフトウェア上限は適用しません。
 - `targetFps`: VSyncを無効にした場合のソフトウェア上限。`0` なら上限処理をしません。VSync有効時は無視されます。上限待機には高解像度タイマーを使いますが、処理負荷やOSのスケジューリング状況により指定FPSを下回ることがあります。
 - `antialias`: 利用可能な場合に 4x、次に 2x MSAA を試します。使用されたサンプル数は `App::SampleCount()` で取得できます。
+
+排他的フルスクリーンを使う場合は、たとえば `options.width = 1280; options.height = 720; options.windowed = false; options.fullscreenMode = library::FullscreenMode::Exclusive;` のように設定します。比率が一致する場合に指定寸法のディスプレイモードがないときや、DXGIが全画面切替を拒否したときは `Initialize` が `false` を返します。
 
 `Initialize(HINSTANCE)` は既定の `AppOptions` を使う簡易形式です。`Initialize(HINSTANCE, const AppOptions&)` は指定した設定で初期化し、成功時に `true` を返します。失敗時は `false` です。
 

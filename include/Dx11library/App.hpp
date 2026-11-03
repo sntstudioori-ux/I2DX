@@ -9,7 +9,8 @@ namespace library
 
     enum class FullscreenMode
     {
-        Borderless
+        Borderless,
+        Exclusive
     };
 
     struct Color
@@ -75,6 +76,7 @@ namespace library
     private:
         static LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
         bool CreateDeviceResources();
+        bool EnterExclusiveFullscreen();
         bool CreateBackBufferView();
         bool CreateMultisampleTarget();
         void ReleaseMultisampleTarget();
@@ -106,6 +108,8 @@ namespace library
         HANDLE frameLimiterTimer_;
         bool frameCounterStarted_;
         bool comInitialized_;
+        bool exclusiveFullscreenActive_;
+        bool exclusiveAspectFitOutput_;
         bool active_;
         bool closing_;
 

@@ -1,6 +1,7 @@
 #include "Dx11library/App.hpp"
 
 #include <string.h>
+#include <vector>
 
 namespace library {
 
@@ -22,7 +23,8 @@ App::App()
       multisampleTexture_(0), multisampleRenderTargetView_(0), multisampleRasterizerState_(0),
       sampleCount_(1), multisampleResolved_(false),
       width_(0), height_(0), bufferWidth_(0), bufferHeight_(0), viewportScale_(1.0f),
-      frameLimiterTimer_(0), frameCounterStarted_(false), comInitialized_(false), active_(true), closing_(false)
+      frameLimiterTimer_(0), frameCounterStarted_(false), comInitialized_(false),
+      exclusiveFullscreenActive_(false), exclusiveAspectFitOutput_(false), active_(true), closing_(false)
 {
     memset(&viewport_, 0, sizeof(viewport_));
     QueryPerformanceFrequency(&frameCounterFrequency_);
@@ -39,12 +41,16 @@ bool App::Initialize(HINSTANCE instance, const AppOptions &options)
 {
     Shutdown();
     if (!instance || !options.width || !options.height || !options.title) return false;
+    if (options.fullscreenMode != FullscreenMode::Borderless &&
+        options.fullscreenMode != FullscreenMode::Exclusive) return false;
     instance_ = instance;
     options_ = options;
     width_ = options.width;
     height_ = options.height;
     bufferWidth_ = width_;
     bufferHeight_ = height_;
+    exclusiveFullscreenActive_ = false;
+    exclusiveAspectFitOutput_ = false;
     frameCounterStarted_ = false;
     active_ = true;
     closing_ = false;
@@ -83,34 +89,63 @@ bool App::Initialize(HINSTANCE instance, const AppOptions &options)
         currentMode.dmSize = sizeof(currentMode);
         if (EnumDisplaySettingsW(monitor.szDevice, ENUM_CURRENT_SETTINGS, &currentMode) &&
             currentMode.dmPelsWidth && currentMode.dmPelsHeight) {
-            bufferWidth_ = currentMode.dmPelsWidth;
-            bufferHeight_ = currentMode.dmPelsHeight;
+            if (options_.fullscreenMode == FullscreenMode::Borderless) {
+                bufferWidth_ = currentMode.dmPelsWidth;
+                bufferHeight_ = currentMode.dmPelsHeight;
+            } else if (static_cast<unsigned long long>(options_.width) * currentMode.dmPelsHeight !=
+                       static_cast<unsigned long long>(options_.height) * currentMode.dmPelsWidth) {
+                // If the ratios differ, render to the monitor-sized buffer and
+                // fit the logical viewport with bars instead of stretching it.
+                exclusiveAspectFitOutput_ = true;
+                bufferWidth_ = currentMode.dmPelsWidth;
+                bufferHeight_ = currentMode.dmPelsHeight;
+            }
         } else {
             bufferWidth_ = static_cast<unsigned int>(rect.right - rect.left);
             bufferHeight_ = static_cast<unsigned int>(rect.bottom - rect.top);
+            if (options_.fullscreenMode == FullscreenMode::Exclusive &&
+                static_cast<unsigned long long>(options_.width) * bufferHeight_ !=
+                static_cast<unsigned long long>(options_.height) * bufferWidth_)
+                exclusiveAspectFitOutput_ = true;
         }
     }
     window_ = CreateWindowExW(0, kWindowClass, options_.title, style, x, y,
                               rect.right - rect.left, rect.bottom - rect.top, 0, 0, instance_, this);
-    if (!window_ || !CreateDeviceResources()) {
+    if (!window_) {
         Shutdown();
         return false;
     }
-    ShowWindow(window_, SW_SHOW);
-    UpdateWindow(window_);
+    // DXGI requires a visible window before it can take exclusive ownership
+    // of the output. Borderless and windowed windows retain the old flow.
+    if (!options_.windowed && options_.fullscreenMode == FullscreenMode::Exclusive) {
+        ShowWindow(window_, SW_SHOW);
+        UpdateWindow(window_);
+    }
+    if (!CreateDeviceResources()) {
+        Shutdown();
+        return false;
+    }
+    if (options_.windowed || options_.fullscreenMode == FullscreenMode::Borderless) {
+        ShowWindow(window_, SW_SHOW);
+        UpdateWindow(window_);
+    }
     return true;
 }
 
 void App::Shutdown()
 {
-    ReleaseMultisampleTarget();
-    Release(multisampleRasterizerState_);
-    ReleaseBackBufferView();
-    Release(swapChain_);
     if (context_) {
         context_->ClearState();
         context_->Flush();
     }
+    ReleaseMultisampleTarget();
+    Release(multisampleRasterizerState_);
+    ReleaseBackBufferView();
+    if (swapChain_ && exclusiveFullscreenActive_) {
+        swapChain_->SetFullscreenState(FALSE, 0);
+        exclusiveFullscreenActive_ = false;
+    }
+    Release(swapChain_);
     Release(context_);
     Release(device_);
     if (window_) {
@@ -139,6 +174,9 @@ bool App::CreateDeviceResources()
     swapDescription.OutputWindow = window_;
     swapDescription.SampleDesc.Count = 1;
     swapDescription.Windowed = TRUE;
+    swapDescription.Flags = !options_.windowed && options_.fullscreenMode == FullscreenMode::Exclusive
+                                ? DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH
+                                : 0;
     swapDescription.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
     const D3D_FEATURE_LEVEL featureLevels[] = {
         D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0
@@ -152,7 +190,10 @@ bool App::CreateDeviceResources()
         result = D3D11CreateDeviceAndSwapChain(0, D3D_DRIVER_TYPE_WARP, 0, flags,
                                                 featureLevels, ARRAYSIZE(featureLevels), D3D11_SDK_VERSION,
                                                 &swapDescription, &swapChain_, &device_, &createdLevel, &context_);
-    if (FAILED(result) || !CreateBackBufferView()) return false;
+    if (FAILED(result)) return false;
+    if (!options_.windowed && options_.fullscreenMode == FullscreenMode::Exclusive &&
+        !EnterExclusiveFullscreen()) return false;
+    if (!CreateBackBufferView()) return false;
     sampleCount_ = 1;
     if (options_.antialias) {
         UINT quality = 0;
@@ -160,6 +201,77 @@ bool App::CreateDeviceResources()
         else if (SUCCEEDED(device_->CheckMultisampleQualityLevels(DXGI_FORMAT_R8G8B8A8_UNORM, 2, &quality)) && quality) sampleCount_ = 2;
     }
     if (sampleCount_ > 1 && !CreateMultisampleTarget()) sampleCount_ = 1;
+    return true;
+}
+
+bool App::EnterExclusiveFullscreen()
+{
+    IDXGIOutput *output = 0;
+    if (FAILED(swapChain_->GetContainingOutput(&output)) || !output) return false;
+
+    UINT modeCount = 0;
+    HRESULT result = output->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, 0, &modeCount, 0);
+    if (FAILED(result) || !modeCount) {
+        output->Release();
+        return false;
+    }
+
+    std::vector<DXGI_MODE_DESC> modes(modeCount);
+    result = output->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, 0, &modeCount, &modes[0]);
+    if (FAILED(result)) {
+        output->Release();
+        return false;
+    }
+
+    DXGI_MODE_DESC requestedMode = {};
+    bool foundMode = false;
+    const unsigned int fullscreenWidth = exclusiveAspectFitOutput_ ? bufferWidth_ : options_.width;
+    const unsigned int fullscreenHeight = exclusiveAspectFitOutput_ ? bufferHeight_ : options_.height;
+    for (UINT i = 0; i < modeCount; ++i) {
+        if (modes[i].Width != fullscreenWidth || modes[i].Height != fullscreenHeight) continue;
+        const bool betterRefreshRate = foundMode && modes[i].RefreshRate.Denominator &&
+            (!requestedMode.RefreshRate.Denominator ||
+             static_cast<unsigned long long>(modes[i].RefreshRate.Numerator) * requestedMode.RefreshRate.Denominator >
+             static_cast<unsigned long long>(requestedMode.RefreshRate.Numerator) * modes[i].RefreshRate.Denominator);
+        if (!foundMode || betterRefreshRate) {
+            requestedMode = modes[i];
+            foundMode = true;
+        }
+    }
+    if (!foundMode) {
+        output->Release();
+        return false;
+    }
+    // Matching aspect ratios can be scaled across the whole output. When the
+    // ratios differ, keep the monitor mode and use the aspect-fit viewport.
+    requestedMode.Scaling = exclusiveAspectFitOutput_
+        ? DXGI_MODE_SCALING_UNSPECIFIED
+        : DXGI_MODE_SCALING_STRETCHED;
+
+    result = swapChain_->SetFullscreenState(TRUE, output);
+    if (SUCCEEDED(result)) {
+        exclusiveFullscreenActive_ = true;
+        result = swapChain_->ResizeTarget(&requestedMode);
+    }
+    if (SUCCEEDED(result))
+        result = swapChain_->ResizeBuffers(1, fullscreenWidth, fullscreenHeight,
+                                           DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+    output->Release();
+    if (FAILED(result)) {
+        if (exclusiveFullscreenActive_) {
+            if (SUCCEEDED(swapChain_->SetFullscreenState(FALSE, 0)))
+                exclusiveFullscreenActive_ = false;
+        }
+        return false;
+    }
+
+    MONITORINFO monitor = {};
+    monitor.cbSize = sizeof(monitor);
+    if (GetMonitorInfoW(MonitorFromWindow(window_, MONITOR_DEFAULTTOPRIMARY), &monitor)) {
+        SetWindowPos(window_, HWND_TOP, monitor.rcMonitor.left, monitor.rcMonitor.top,
+                     static_cast<int>(fullscreenWidth), static_cast<int>(fullscreenHeight),
+                     SWP_NOACTIVATE | SWP_FRAMECHANGED);
+    }
     return true;
 }
 

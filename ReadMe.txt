@@ -3,7 +3,7 @@
                               (c)opyright SNT Studio
 
 
-                                                 ver 1.05
+                                                 ver 1.06
 　ReadMe れあどめ～　　　　　　　　　　SNT Studio 代表 SR
 -------------------------------------------------------------
 
@@ -64,6 +64,10 @@ Scroll down for the English version.
 　変更後のライセンスが適用されるのは、原則として変更後のライセンスが付属されたバージョン以降とします。
 　
 ■５．変更点
+　・1.06
+　　Borderless表示とは別に、排他的フルスクリーン機能を追加しました。
+　　リベンジ成功！！！！
+
 　・1.05
 　　FPSを直接指定していた際に、指定FPSより低いFPSで動作していた問題を修正しました。
 　　凡ミスすぎて申し訳ない・・・
@@ -158,6 +162,9 @@ Also, these terms of use may be changed without prior notice.
 As a general rule, the changed license applies only to versions that ship with the changed license.
 
 ■5. Changelog
+・1.06
+　Added exclusive full-screen mode, which renders at the requested resolution independently of borderless mode.
+
 ・1.05
 　　Fixed an issue where the game would run at a lower frame rate than the one specified when a target FPS was set directly.
 　　My apologies—this was such a silly, careless mistake...
