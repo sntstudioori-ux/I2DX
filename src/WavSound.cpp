@@ -251,7 +251,6 @@ namespace library
 
         buffer.Flags = XAUDIO2_END_OF_STREAM;
 
-        // 追加する部分
         buffer.LoopBegin = loopBegin;
         buffer.LoopLength = loopLength;
         buffer.LoopCount = XAUDIO2_LOOP_INFINITE;

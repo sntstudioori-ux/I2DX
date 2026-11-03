@@ -3,7 +3,7 @@
                               (c)opyright SNT Studio
 
 
-                                                 ver 1.04
+                                                 ver 1.05
 　ReadMe れあどめ～　　　　　　　　　　SNT Studio 代表 SR
 -------------------------------------------------------------
 
@@ -64,11 +64,14 @@ Scroll down for the English version.
 　変更後のライセンスが適用されるのは、原則として変更後のライセンスが付属されたバージョン以降とします。
 　
 ■５．変更点
-　・1.04
+　・1.05
+　　FPSを直接指定していた際に、指定FPSより低いFPSで動作していた問題を修正しました。
+　　凡ミスすぎて申し訳ない・・・
+
+　・1.04f
 　　フルスクリーン時に、指定の解像度で描画されなくなっていた問題を修正しました。
 　　なお、描画解像度の問題ですので、プログラム内の座標には影響はないと思われます。多分。
-　　ついでに、ボーダーレスウィンドウに加えて、排他的フルスクリーンも使えるようにしました。
-　　追加しましたが、何かの間違いで動作していません。修正が完了するまではBorderlessを使ってください。
+　　排他的フルスクリーン機能は削除しました。フルスクリーン表示には引き続きBorderlessを使用してください。
 
 　・1.03
 　　利用規約を緩くしました。
@@ -155,11 +158,14 @@ Also, these terms of use may be changed without prior notice.
 As a general rule, the changed license applies only to versions that ship with the changed license.
 
 ■5. Changelog
-・1.04
+・1.05
+　　Fixed an issue where the game would run at a lower frame rate than the one specified when a target FPS was set directly.
+　　My apologies—this was such a silly, careless mistake...
+
+・1.04f
 　Fixed an issue where the game would not render at the specified resolution when in full-screen mode.
 　Note that since this is a rendering resolution issue, it should not affect the coordinates used within the program. (Probably.)
-　Additionally, I have added support for exclusive full-screen mode, alongside the existing borderless window mode.
-　I have added it, but due to some error, it is not working. Please use "Borderless" until the fix is ​​complete.
+　Exclusive full-screen support has been removed. Use "Borderless" for full-screen display.
 
 ・1.03
 　Relaxed the terms of use.

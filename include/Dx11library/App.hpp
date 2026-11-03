@@ -9,7 +9,6 @@ namespace library
 
     enum class FullscreenMode
     {
-        Exclusive,
         Borderless
     };
 
@@ -29,7 +28,7 @@ namespace library
     struct AppOptions
     {
         AppOptions()
-            : width(640), height(480), title(L"DirectX 11 application"), windowed(true), fullscreenMode(FullscreenMode::Borderless), vsync(true), targetFps(60), antialias(true)
+            : width(640), height(480), title(L"DirectX 11 application"), windowed(true), fullscreenMode(FullscreenMode::Borderless), vsync(true), targetFps(0), antialias(true)
         {
         }
 
@@ -104,6 +103,7 @@ namespace library
         float viewportScale_;
         LARGE_INTEGER frameCounterFrequency_;
         LARGE_INTEGER lastFrameCounter_;
+        HANDLE frameLimiterTimer_;
         bool frameCounterStarted_;
         bool comInitialized_;
         bool active_;

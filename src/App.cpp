@@ -22,14 +22,18 @@ App::App()
       multisampleTexture_(0), multisampleRenderTargetView_(0), multisampleRasterizerState_(0),
       sampleCount_(1), multisampleResolved_(false),
       width_(0), height_(0), bufferWidth_(0), bufferHeight_(0), viewportScale_(1.0f),
-      frameCounterStarted_(false), comInitialized_(false), active_(true), closing_(false)
+      frameLimiterTimer_(0), frameCounterStarted_(false), comInitialized_(false), active_(true), closing_(false)
 {
     memset(&viewport_, 0, sizeof(viewport_));
     QueryPerformanceFrequency(&frameCounterFrequency_);
     lastFrameCounter_.QuadPart = 0;
 }
 
-App::~App() { Shutdown(); }
+App::~App()
+{
+    Shutdown();
+    if (frameLimiterTimer_) CloseHandle(frameLimiterTimer_);
+}
 
 bool App::Initialize(HINSTANCE instance, const AppOptions &options)
 {
@@ -61,8 +65,6 @@ bool App::Initialize(HINSTANCE instance, const AppOptions &options)
         return false;
     }
 
-    const bool exclusive = !options_.windowed && options_.fullscreenMode == FullscreenMode::Exclusive;
-    bool exclusiveModeAvailable = exclusive;
     const DWORD style = options_.windowed ? (WS_OVERLAPPEDWINDOW & ~WS_MAXIMIZEBOX) : WS_POPUP;
     RECT rect = { 0, 0, static_cast<LONG>(width_), static_cast<LONG>(height_) };
     int x = CW_USEDEFAULT;
@@ -86,10 +88,6 @@ bool App::Initialize(HINSTANCE instance, const AppOptions &options)
         } else {
             bufferWidth_ = static_cast<unsigned int>(rect.right - rect.left);
             bufferHeight_ = static_cast<unsigned int>(rect.bottom - rect.top);
-            // Without the physical display mode, exclusive presentation could
-            // select a virtualized desktop size and leave the monitor without
-            // a usable signal. Keep the full-size windowed swap chain instead.
-            exclusiveModeAvailable = false;
         }
     }
     window_ = CreateWindowExW(0, kWindowClass, options_.title, style, x, y,
@@ -100,28 +98,11 @@ bool App::Initialize(HINSTANCE instance, const AppOptions &options)
     }
     ShowWindow(window_, SW_SHOW);
     UpdateWindow(window_);
-    if (exclusiveModeAvailable) {
-        IDXGIOutput *output = 0;
-        SetForegroundWindow(window_);
-        HRESULT result = swapChain_->GetContainingOutput(&output);
-        if (SUCCEEDED(result)) result = swapChain_->SetFullscreenState(TRUE, output);
-        if (SUCCEEDED(result)) {
-            BOOL fullscreen = FALSE;
-            result = swapChain_->GetFullscreenState(&fullscreen, 0);
-            if (SUCCEEDED(result) && !fullscreen) result = DXGI_ERROR_NOT_CURRENTLY_AVAILABLE;
-        }
-        if (output) output->Release();
-        if (FAILED(result)) {
-            Shutdown();
-            return false;
-        }
-    }
     return true;
 }
 
 void App::Shutdown()
 {
-    if (swapChain_) swapChain_->SetFullscreenState(FALSE, 0);
     ReleaseMultisampleTarget();
     Release(multisampleRasterizerState_);
     ReleaseBackBufferView();
@@ -159,10 +140,6 @@ bool App::CreateDeviceResources()
     swapDescription.SampleDesc.Count = 1;
     swapDescription.Windowed = TRUE;
     swapDescription.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-    // Required for ResizeTarget to switch the display mode of a windowed
-    // swap chain when entering exclusive fullscreen.
-    swapDescription.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-
     const D3D_FEATURE_LEVEL featureLevels[] = {
         D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0
     };
@@ -295,13 +272,20 @@ bool App::BeginFrame(const Color &clearColor)
 bool App::EndFrame()
 {
     if (!swapChain_ || !ResolveMultisampleTarget() || FAILED(swapChain_->Present(options_.vsync ? 1 : 0, 0))) return false;
-    LimitFrameRate();
+    // VSync already paces presentation to the display. Applying a second
+    // software limiter here can miss a refresh when its sleep resumes late.
+    if (!options_.vsync) LimitFrameRate();
     return true;
 }
 
 void App::LimitFrameRate()
 {
     if (!options_.targetFps || frameCounterFrequency_.QuadPart <= 0) return;
+    if (!frameLimiterTimer_) {
+        frameLimiterTimer_ = CreateWaitableTimerExW(0, 0, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
+        if (!frameLimiterTimer_) frameLimiterTimer_ = CreateWaitableTimerW(0, FALSE, 0);
+    }
+
     LARGE_INTEGER now;
     QueryPerformanceCounter(&now);
     if (!frameCounterStarted_) {
@@ -314,7 +298,19 @@ void App::LimitFrameRate()
                            static_cast<double>(frameCounterFrequency_.QuadPart);
     const double remaining = frameSeconds - elapsed;
     if (remaining > 0.0) {
-        if (remaining > 0.002) Sleep(static_cast<DWORD>(remaining * 1000.0) - 1);
+        // Sleep() may resume several milliseconds late. Wait on a high
+        // resolution timer until just before the deadline, then spin briefly.
+        if (remaining > 0.001) {
+            const double waitSeconds = remaining - 0.001;
+            LARGE_INTEGER dueTime;
+            dueTime.QuadPart = -static_cast<LONGLONG>(waitSeconds * 10000000.0);
+            if (frameLimiterTimer_ &&
+                SetWaitableTimer(frameLimiterTimer_, &dueTime, 0, 0, 0, FALSE)) {
+                WaitForSingleObject(frameLimiterTimer_, INFINITE);
+            } else {
+                Sleep(static_cast<DWORD>(waitSeconds * 1000.0));
+            }
+        }
         do {
             QueryPerformanceCounter(&now);
         } while (static_cast<double>(now.QuadPart - lastFrameCounter_.QuadPart) /

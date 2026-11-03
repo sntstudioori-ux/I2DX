@@ -2,20 +2,18 @@
 
 #include "Dx11library/Dx11library.hpp"
 
-// Minimal standalone application: creates a 640 x 480 DirectX 11 window,
-// clears it every frame, and exits when the user closes the window.
 int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int)
 {
     library::App app;
-    library::AppOptions Options;
-    Options.title = L"library test";
-    Options.width = 640;
-    Options.height = 480;
-    Options.vsync = true;
-    Options.targetFps = 60;
-    Options.antialias = true;
-    Options.windowed = true;
-    if (!app.Initialize(instance, Options))
+    library::AppOptions options;
+    options.title = L"library test";
+    options.width = 640;
+    options.height = 480;
+    options.vsync = true;
+    options.targetFps = 0; // VSync controls pacing; targetFps is used when VSync is off.
+    options.antialias = true;
+    options.windowed = true;
+    if (!app.Initialize(instance, options))
     {
         MessageBoxW(0, L"DirectX 11の初期化に失敗したようです。", L"library", MB_OK | MB_ICONERROR);
         return 1;
@@ -45,12 +43,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int)
     }
 
     library::Camera3D camera;
-
-    camera.Reset();
-
-    library::Camera3D *Camera = &camera;
-
-    render3D.SetCamera(Camera);
+    render3D.SetCamera(&camera);
 
     library::FontRenderer fontRenderer;
 
@@ -70,7 +63,6 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int)
 
     while (app.PumpMessages())
     {
-        // Do not continuously render while the application is in the background.
         if (!app.IsActive())
         {
             Sleep(10);

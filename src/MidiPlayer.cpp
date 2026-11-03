@@ -1,6 +1,4 @@
 #include "Dx11library/MidiPlayer.hpp"
-#include "Dx11library/File.hpp"
-
 #include <mmsystem.h>
 #include <stdio.h>
 #include <wchar.h>
@@ -97,8 +95,6 @@ void MidiPlayer::Release()
 {
     Stop();
     if (!alias_.empty()) {
-        MCI_GENERIC_PARMS genericParms;
-        memset(&genericParms, 0, sizeof(genericParms));
         mciSendStringW((L"close " + alias_).c_str(), 0, 0, 0);
         alias_.clear();
     }

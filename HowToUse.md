@@ -1,57 +1,55 @@
-# Dx11library -- Standalone DirectX 11 & Audio Library
+# Dx11library の使い方
 
-Windows 用の最小限の DirectX 11 描画およびオーディオ再生ライブラリです。
-軽量化を重視して設計されています。
+Dx11library は、Win32 ウィンドウ、Direct3D 11 による 2D/3D 描画、DirectWrite によるテキスト描画、WAV/MIDI 再生、キーボード状態の取得をまとめた Windows 向け C++ ライブラリです。アプリケーション側でゲームループやリソースの読み込みタイミングを管理し、各クラスの初期化・描画・解放を呼び出します。
 
----
+## ヘッダーと名前空間
 
-## 目次
-1. [アプリケーション & ウィンドウ管理 (`App`)](#1-アプリケーション--ウィンドウ管理-app)
-2. [2D グラフィックス (`Texture` & `Renderer2D`)](#2-2d-グラフィックス-texture--renderer2d)
-3. [3D グラフィックス & カメラ (`Texture3D` & `Renderer3D` & `Camera3D`)](#3-3d-グラフィックス--カメラ-texture3d--renderer3d--camera3d)
-4. [テキスト描画 (`Font` & `FontRenderer`)](#4-テキスト描画-font--fontrenderer)
-5. [オーディオ再生 (`AudioEngine` & `WavSound` & `MidiPlayer`)](#5-オーディオ再生-audioengine--wavsound--midiplayer)
-6. [ユーティリティ (`File`)](#6-ユーティリティ-file)
-7. [ビルド方法](#7-ビルド方法)
-8. [キーボード入力 (`Keyboard`)](#8-キーボード入力-keyboard)
+全機能を使う場合は `Dx11library/Dx11library.hpp` をインクルードします。個別のヘッダーをインクルードして使うこともできます。公開クラスと型は `library` 名前空間にあります。
 
----
-
-## 1. アプリケーション & ウィンドウ管理 (`App`)
-
-### `library::App`
-Win32 ウィンドウ、Direct3D 11 デバイス、スワップチェーン、およびバックバッファのライフサイクルを管理します。
-
-#### 主要メンバー関数
-*   `bool Initialize(HINSTANCE instance, const AppOptions &options = AppOptions())`
-    *   ウィンドウと DirectX 11 デバイス環境を初期化します。
-*   `void Shutdown()`
-    *   確保したリソースを解放し、ウィンドウを破棄します。
-*   `bool PumpMessages()`
-    *   Windows メッセージを処理します。ウィンドウが閉じられると `false` を返します。
-*   `bool BeginFrame(const Color &clearColor = Color())`
-    *   描画フレームを開始し、指定された色でバックバッファをクリアします。
-*   `bool EndFrame()`
-    *   描画されたフレームを画面に表示（Present）します。
-
-#### ヘルパー構造体
-*   `Color(float red, float green, float blue, float alpha = 1.0f)`: RGBAカラー。
-*   `AppOptions`: ウィンドウの幅、高さ、タイトル、ウィンドウモード、VSync の有無などを設定する構造体。幅と高さは描画座標の基準サイズです。ウィンドウをリサイズした場合もこのサイズを保ち、アスペクト比を維持して表示します。`windowed = false` のときは `fullscreenMode` で `FullscreenMode::Exclusive`（排他的フルスクリーン。出力解像度はディスプレイの現在解像度を使い、描画サイズは幅と高さの指定を維持）または `FullscreenMode::Borderless`（デスクトップ解像度のボーダーレス表示）を選べます。既定値は従来互換の `Borderless` です。
-*   `antialias = true`: 対応する場合は2xまたは4x MSAAで2D/3D描画を行い、文字描画にもアンチエイリアスを適用します。実際のD3Dサンプル数は `App::SampleCount()` で確認できます。
-
-#### 使用例
 ```cpp
-#include "App.hpp"
+#include "Dx11library/Dx11library.hpp"
 
-int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int)
+library::App app;
+```
+
+ライブラリは C++17 と Windows SDK を前提とします。Direct3D のデバイスやコンテキストは `App` が所有し、描画用クラスはそれらを利用します。描画リソースや音源を所有するクラスは、対応する `App` / `AudioEngine` より先に破棄してください。これらのクラスはコピーできません。
+
+## アプリケーションとフレーム
+
+### `library::App` と `library::AppOptions`
+
+`App` はウィンドウ、D3D11 デバイス、スワップチェーン、バックバッファを管理します。`Initialize` に成功した後、メッセージ処理と描画を繰り返し、終了時に `Shutdown` を呼びます。デストラクターも解放を行います。
+
+`AppOptions` の既定値は幅 640、高さ 480、タイトル `DirectX 11 application`、ウィンドウ表示、VSync 有効、ソフトウェアのFPS上限なし、アンチエイリアス有効です。VSync とソフトウェア上限は同時に使わず、VSyncを有効にするとディスプレイの更新タイミングに同期します。VSyncを無効にした場合は `targetFps` がソフトウェア上限として働きます。
+
+- `width`, `height`: 論理描画領域の幅と高さ（ピクセル）。ウィンドウをリサイズしてもこの座標系を保ち、描画領域はアスペクト比を維持して中央に表示されます。
+- `title`: ウィンドウタイトル。ワイド文字列を指定します。
+- `windowed`: `true` なら通常のウィンドウ、`false` ならプライマリーモニター全体を使うボーダーレス表示です。
+- `fullscreenMode`: 現在定義されている値は `FullscreenMode::Borderless` です。
+- `vsync`: `true` なら `Present` 時に垂直同期を有効にします。この場合、`targetFps` によるソフトウェア上限は適用しません。
+- `targetFps`: VSyncを無効にした場合のソフトウェア上限。`0` なら上限処理をしません。VSync有効時は無視されます。上限待機には高解像度タイマーを使いますが、処理負荷やOSのスケジューリング状況により指定FPSを下回ることがあります。
+- `antialias`: 利用可能な場合に 4x、次に 2x MSAA を試します。使用されたサンプル数は `App::SampleCount()` で取得できます。
+
+`Initialize(HINSTANCE)` は既定の `AppOptions` を使う簡易形式です。`Initialize(HINSTANCE, const AppOptions&)` は指定した設定で初期化し、成功時に `true` を返します。失敗時は `false` です。
+
+### フレーム処理
+
+`PumpMessages()` は Windows メッセージを処理します。ウィンドウが閉じられると `false` を返すため、通常はゲームループの条件にします。`IsActive()` はアプリがフォアグラウンドか、`ShouldClose()` は終了要求が出ているかを返します。
+
+各フレームでは `BeginFrame` でバックバッファをクリアし、描画クラスを呼び出してから `EndFrame` で画面に表示します。`BeginFrame` の色は `Color` の RGBA 浮動小数値で指定します。既定色は不透明な黒です。
+
+```cpp
+#include "Dx11library/Dx11library.hpp"
+
+int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int)
 {
     library::App app;
     library::AppOptions options;
-    options.title = L"My Game";
-    options.width = 640;
-    options.height = 480;
-    options.windowed = false;
-    options.fullscreenMode = library::FullscreenMode::Exclusive;
+    options.title = L"Sample";
+    options.width = 1280;
+    options.height = 720;
+    options.vsync = true;
+    options.targetFps = 0; // VSyncとFPS上限を重ねない
 
     if (!app.Initialize(instance, options)) return 1;
 
@@ -62,289 +60,242 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE, LPSTR, int)
             continue;
         }
 
-        // フレーム開始（背景色を青っぽくクリア）
-        if (app.BeginFrame(library::Color(0.1f, 0.2f, 0.4f)))
-        {
-            // ここで描画処理を行う
-
-            app.EndFrame(); // フレーム終了と表示
+        if (app.BeginFrame(library::Color(0.08f, 0.10f, 0.16f))) {
+            // Renderer2D / Renderer3D による描画
+            app.EndFrame();
         }
     }
+    app.Shutdown();
     return 0;
 }
 ```
 
----
+VSyncを使わず60 FPSに制限する場合は、`options.vsync = false; options.targetFps = 60;` とします。VSync有効時の実際のフレームレートはディスプレイの更新頻度に従うため、60 Hz環境でも約59.94 FPSになることがあります。
 
-## 2. 2D グラフィックス (`Texture` & `Renderer2D`)
+`Width()` と `Height()` は論理描画領域の寸法です。`ViewportScale()` と `ViewportOffsetX()` / `ViewportOffsetY()` は、実際のバックバッファ上で論理領域を表示するスケールと余白を返します。描画時に必要な D3D11 オブジェクトは `Device()`、`Context()`、`SwapChain()` から取得できます。`Window()` は HWND を返します。これらのポインターは `App` が所有します。`Antialias()` は設定値、`SampleCount()` は実際に使われる MSAA サンプル数です。
 
-### `library::Renderer2D`
-スプライトを描画するためのシェーダーや頂点バッファを管理します。
+`ResolveMultisample()` は MSAA 描画結果をスワップチェーンのバックバッファへ解決します。通常は `EndFrame` が実行します。テキストの合成処理など、フレーム途中でバックバッファの内容が必要な場面ではライブラリ内部から使われます。
 
-### `library::Texture`
-WIC (Windows Imaging Component) を使用して、PNG、JPEG、BMP などの画像ファイルを読み込み、描画します。
+### `Color`
 
-#### 主要メンバー関数（`Texture`）
-*   `bool LoadFile(ID3D11Device *device, const wchar_t *path)`
-    *   ファイルから画像をロードします。
-*   `bool LoadMemory(ID3D11Device *device, const void *data, unsigned int size)`
-    *   メモリ上のバイナリデータから画像をロードします。
-*   `bool Draw(Renderer2D &renderer, const App &app, const RectF &destination, const RECT *source = nullptr, const Color &color = Color(1.0f, 1.0f, 1.0f, 1.0f)) const`
-    *   テクスチャの指定した範囲 (`source`) を画面の指定矩形 (`destination`) に描画します。
+`Color(red, green, blue, alpha)` は各成分を `0.0f` から `1.0f` の範囲で指定する RGBA 色です。`alpha` の既定値は `1.0f` です。スプライトや文字では色の乗算・透明度にも使います。
 
-#### 使用例
+## 2D テクスチャ描画
+
+### `Renderer2D`
+
+`Renderer2D` は 2D スプライト用のシェーダーや頂点バッファを保持します。描画前に `Initialize(app.Device())` を一度呼び、使用終了時に `Shutdown()` を呼びます。初期化に失敗した場合は描画できません。
+
+`Texture::Draw` は `Renderer2D` と `App` を受け取り、アプリの D3D11 コンテキストと論理画面サイズを使って描画します。描画呼び出しは `App::BeginFrame` と `App::EndFrame` の間に行います。
+
+### `Texture` と `RectF`
+
+`Texture` は WIC を使って画像を読み込み、D3D11 のシェーダーリソースとして保持します。`LoadFile(device, path)` は画像ファイルから、`LoadMemory(device, data, size)` はメモリ上の画像データから読み込みます。対応形式は Windows Imaging Component がデコードできる形式（一般的な PNG、JPEG、BMP など）です。どちらも成功時は `true` を返します。
+
+`Width()` と `Height()` は読み込んだ画像の寸法、`View()` は内部のシェーダーリソースビューを返します。通常は直接使わず `Draw` で描画します。別の画像を読み込む前や使用終了時は `Release()` で解放できます。デストラクターも解放します。
+
+`RectF(left, top, right, bottom)` は論理画面上の描画先矩形です。`Texture::Draw(renderer, app, destination, source, color)` の引数は次のとおりです。
+
+- `destination`: 画面上の矩形。座標は論理画面のピクセル単位です。
+- `source`: 画像内の切り出し矩形を表す `RECT` へのポインター。`nullptr` なら画像全体を使います。右端・下端は `RECT` の通常の半開区間に従います。
+- `color`: テクスチャに乗算する色。既定値は不透明な白で、元画像の色をそのまま表示します。
+
 ```cpp
-#include "Dx11library/Dx11library.hpp"
-
 library::Renderer2D renderer;
-renderer.Initialize(app.Device());
+if (!renderer.Initialize(app.Device())) return 1;
 
 library::Texture background;
-background.LoadFile(app.Device(), L"img/background.png");
+if (!background.LoadFile(app.Device(), L"assets/background.png")) return 1;
 
-// 描画ループ内（BeginFrame と EndFrame の間）
-library::RectF destRect(0.0f, 0.0f, 640.0f, 480.0f);
-background.Draw(renderer, app, destRect);
+// フレーム内
+library::RectF destination(0.0f, 0.0f,
+                            static_cast<float>(app.Width()),
+                            static_cast<float>(app.Height()));
+background.Draw(renderer, app, destination);
 ```
 
-> [!IMPORTANT]
-> `Renderer2D` と `Texture` は、`App` の破棄（または `App::Shutdown`）よりも前に破棄（または `Release()`）されるようにしてください。これは、Direct3D デバイスが参照されている状態でデバイスが解放されるのを防ぐためです。
+`Renderer2D` と `Texture` は `App` が提供する D3D11 デバイスに依存します。`App::Shutdown()` より前に両者を解放してください。
 
----
+## 3D テクスチャ描画とカメラ
 
-## 3. 3D グラフィックス & カメラ (`Texture3D` & `Renderer3D` & `Camera3D`)
+### `Renderer3D`、`Texture3D`、`RectF3D`
 
-### `library::Renderer3D`
-Z座標および遠近投影（パースペクティブ射影）に対応した3D描画用のレンダラーです。デフォルトでは Z=0 の平面が通常の 2D 画面上の座標とピクセル単位で1:1に一致するように自動計算されます。
+`Renderer3D` はテクスチャ付き四角形を遠近投影で描画し、深度テストを行います。`Initialize(app.Device())` を一度呼び、終了時に `Shutdown()` を呼びます。既定の視点では `Z=0` が通常の 2D 画面平面に一致し、正の Z は画面の奥へ進みます。X/Y 座標は左上原点のピクセル座標です。
 
-### `library::Texture3D`
-`Texture` クラスを継承しており、X, Y に加えて Z 座標を指定して描画できる 3D 対応のテクスチャクラスです。
+`SetFov(degrees)` は視野角を度数で設定します。既定値は 60 度で、値が小さいほど遠近感は弱く、大きいほど強くなります。`GetFov()` で現在値を取得します。
 
-#### 主要メンバー関数（`Texture3D`）
-*   `bool Draw(Renderer3D &renderer, const App &app, float x1, float y1, float z1, float x2, float y2, float z2, const RECT *source = nullptr, const Color &color = Color(1.0f, 1.0f, 1.0f, 1.0f)) const`
-    *   指定した3D空間上の2つの対角点 `(x1, y1, z1)`（左上相当）と `(x2, y2, z2)`（右下相当）にテクスチャを描画します。
-*   `bool Draw(Renderer3D &renderer, const App &app, const RectF3D &destination, const RECT *source = nullptr, const Color &color = Color(1.0f, 1.0f, 1.0f, 1.0f)) const`
-    *   3D範囲指定用の構造体 `RectF3D` を使用して描画します。
+`Texture3D` は `Texture` を継承するため、同じ `LoadFile`、`LoadMemory`、`Release`、寸法取得を使えます。`Draw` には座標を個別に渡す形式と `RectF3D` を渡す形式があります。座標形式では `(x1, y1, z1)` を左上側、`(x2, y2, z2)` を右下側の角として四角形を定義します。`RectF3D` は同じ6座標をまとめた型です。`source` と `color` の意味・既定値は `Texture::Draw` と同じです。
 
-### `library::Camera3D`
-画面中央をピボット（回転中心）として、3D空間におけるカメラ位置の移動（スクロール、ズーム）や回転（ピッチ、ヨー、ロール）を行う軽量なカメラ管理クラスです。
+### `Camera3D`
 
-#### 主要メンバー関数（`Camera3D`）
-*   `void SetPosition(float x, float y, float z)`
-    *   カメラの座標を設定します。X, Y はピクセル単位の平行移動（スクロール）、Z はデフォルト位置からの奥行き移動（ズーム）です。
-*   `void SetRotation(float pitch, float yaw, float roll)`
-    *   カメラの回転角度（度数法）を設定します。
-*   `void Reset()`
-    *   カメラの移動および回転をすべて初期状態（デフォルトの2Dビューポートと一致する状態）にリセットします。
+`Camera3D` は標準視点からの移動と回転を保持します。`SetPosition(x, y, z)` は位置を設定し、`Move(dx, dy, dz)` は現在値に加算します。X/Y は画面ピクセル単位の視点移動、Z は奥行き方向の移動です。正の Z はカメラをシーンに近づけてズームインし、負の Z は遠ざけます。カメラを右または下へ動かすと、シーンは画面上で左または上へ動きます。
 
-#### 使用例
+`SetRotation(pitch, yaw, roll)` は回転を度数で設定し、`Rotate(dPitch, dYaw, dRoll)` は現在値に加算します。回転中心は画面中央です。`X()` / `Y()` / `Z()` と `Pitch()` / `Yaw()` / `Roll()` で現在値を取得し、`Reset()` で移動と回転を初期値に戻します。
+
+カメラを描画に適用するには `renderer.SetCamera(&camera)` を呼びます。レンダラーはポインターを保持するだけで所有しないため、描画中は `Camera3D` の寿命を保ちます。`SetCamera(nullptr)` で標準視点に戻ります。
+
 ```cpp
-#include "Dx11library/Dx11library.hpp"
-
 library::Renderer3D renderer3D;
-renderer3D.Initialize(app.Device());
+if (!renderer3D.Initialize(app.Device())) return 1;
 
-library::Texture3D tex;
-tex.LoadFile(app.Device(), L"img/background_3d.png");
+library::Texture3D sprite;
+if (!sprite.LoadFile(app.Device(), L"assets/object.png")) return 1;
 
 library::Camera3D camera;
-renderer3D.SetCamera(&camera); // レンダラーにカメラをアタッチ
+renderer3D.SetCamera(&camera);
+renderer3D.SetFov(60.0f);
 
-// --- 描画ループ内（BeginFrame と EndFrame の間） ---
+// 更新時
+camera.Move(1.0f, 0.0f, 0.0f);
+camera.SetRotation(10.0f, 0.0f, 0.0f);
 
-// カメラを操作する（例：画面を少し傾け、Z方向にズームインし、右に少しスクロール）
-camera.SetPosition(50.0f, 0.0f, 100.0f);
-camera.SetRotation(15.0f, 0.0f, 5.0f);
-
-// 3D空間上に描画（奥行きを持たせて奥に傾ける）
-tex.Draw(renderer3D, app,
-         0.0f,   0.0f,   0.0f,     // 左上点 (x1, y1, z1)
-         640.0f, 480.0f, 200.0f);  // 右下点 (x2, y2, z2) -- 奥(Z=200)へ向かう傾き
+// フレーム内
+sprite.Draw(renderer3D, app,
+            library::RectF3D(100.0f, 100.0f, 0.0f,
+                             300.0f, 260.0f, 150.0f));
 ```
 
-> [!NOTE]
-> `Renderer3D` は内部的に深度バッファテスト（`D3D11_COMPARISON_LESS_EQUAL`）を有効にして描画するため、Z座標の前後関係が正しく処理されます。また、カメラを無効にするには `renderer3D.SetCamera(nullptr)` を呼び出します。
+## テキスト描画
 
----
+### `FontRenderer` と `Font`
 
-## 4. テキスト描画 (`Font` & `FontRenderer`)
+`FontRenderer` は D2D/DirectWrite の共有リソースを管理します。`App` の初期化後に `Initialize(app)` を呼びます。各フレームのテキスト描画は `Begin(app)` と `End(app)` で囲み、その間に `Font::Draw` を呼びます。2D/3D描画の後、`App::EndFrame()` の前に文字を描画する順序が基本です。使用終了時に `Shutdown()` を呼びます。
 
-### `library::Font`
-`Font` はフォント、サイズ、色、透明度、グラデーションを保持する再利用可能なテキストスタイルです。`FontRenderer` は Direct2D / DirectWrite の共有リソースと描画セッションを管理します。複数の `Font` を同時に使用できます。
+`Font` は個別の書体と表示スタイルを持ち、同じ `FontRenderer` で複数作成できます。`LoadSystem(renderer, familyName, size)` はシステムに登録されたフォントファミリー、`LoadFile(renderer, path, familyName, size)` はフォントファイルを使います。ファイル指定時の `familyName` はフォントファイル内に定義されたファミリー名です。サイズは正の値を指定します。読み込みに失敗した場合は `false` を返します。
 
-### `library::FontRenderer`
-アプリケーションごとに一つ作成します。`Begin` と `End` の間で `Font::Draw` を呼び出します。テキストは通常、2D/3D の描画後、`App::EndFrame` の前に描画してください。
+- `SetSize(size)`: フォントサイズを変更します。失敗時は `false` を返します。
+- `SetColor(color)`: 単色を設定します。グラデーションが有効な間は単色設定は描画に使われません。
+- `SetOpacity(opacity)`: 文字全体の追加不透明度を設定します。値は `0` から `1` に収められます。色の alpha 値にも乗算されます。
+- `SetGradient(top, bottom)`: 描画矩形の上から下に向かうグラデーションを有効にします。
+- `ClearGradient()`: グラデーションを解除し、`SetColor` の色を使う状態に戻します。
+- `Measure(text)`: 描画に必要な文字幅・高さをピクセル単位の `TextSize`（`width`, `height`）で返します。引数が無効、または計測に失敗した場合は幅・高さとも 0 です。
+- `Draw(renderer, text, destination)`: 指定矩形に文字列を描画します。レンダラーの `Begin(app)` と `End(app)` の間で呼び出します。
+- `Release()`: フォント形式やフォントコレクションを解放します。デストラクターも解放します。
 
-#### 主要メンバー関数
-*   `bool FontRenderer::Initialize(const App &app)` / `bool Begin(const App &app)` / `bool End()`
-    *   共有リソースを初期化し、テキスト描画を開始・終了します。
-*   `bool Font::LoadSystem(FontRenderer &renderer, const wchar_t *familyName, float size = 16.0f)`
-    *   システムにインストール済みのフォントを読み込みます。
-*   `bool Font::LoadFile(FontRenderer &renderer, const wchar_t *path, const wchar_t *familyName, float size = 16.0f)`
-    *   `.ttf` または `.otf` をこの `Font` 専用のコレクションとして読み込みます。`familyName` はフォントファイルの内部ファミリー名を指定します。
-*   `bool SetSize(float size)`, `SetColor`, `SetOpacity`, `SetGradient`, `ClearGradient`
-    *   文字サイズ、単色、透明度、上から下へのグラデーションを設定します。
-*   `TextSize Measure(const wchar_t *text) const`
-    *   テキストを描画したときの幅と高さをピクセル単位で取得します。失敗時は `{0, 0}` を返します。
-*   `bool Draw(FontRenderer &renderer, const wchar_t *text, const RectF &destination) const`
-    *   描画矩形にテキストを描画します。
-
-#### 使用例
 ```cpp
-#include "Dx11library/Dx11library.hpp"
-
 library::FontRenderer fontRenderer;
 if (!fontRenderer.Initialize(app)) return 1;
 
-// システムフォント、または TTF/OTF を読み込む
-library::Font myFont;
-myFont.LoadFile(fontRenderer, L"fonts/my_custom_font.ttf", L"My Font", 24.0f);
-// myFont.LoadSystem(fontRenderer, L"MS Gothic", 24.0f);
-myFont.SetGradient(library::Color(1.0f, 0.9f, 0.2f),
-                   library::Color(1.0f, 0.2f, 0.2f));
-myFont.SetOpacity(0.9f);
+library::Font font;
+if (!font.LoadSystem(fontRenderer, L"Yu Gothic UI", 24.0f)) return 1;
+font.SetColor(library::Color(1.0f, 1.0f, 0.8f));
+font.SetOpacity(0.9f);
 
-// 3. 描画ループ内（BeginFrame と EndFrame の間）
-if (app.BeginFrame(...))
-{
-    if (fontRenderer.Begin(app))
-    {
-        myFont.Draw(fontRenderer, L"Score: 123450", library::RectF(10.0f, 10.0f, 400.0f, 50.0f));
-        fontRenderer.End();
-    }
-
-    app.EndFrame();
-}
-
-fontRenderer.Shutdown();
-```
-
----
-
-## 5. オーディオ再生 (`AudioEngine` & `WavSound` & `MidiPlayer`)
-
-### `library::AudioEngine`
-XAudio2 エンジンおよびマスタリングボイスを統括・管理します。
-
-### `library::WavSound`
-WAVサウンドデータをメモリにロードし、XAudio2 経由で再生する効果音・BGM用クラスです。
-
-### `library::MidiPlayer`
-Windows の MCI (Media Control Interface) サブシステムを利用して MIDI ファイルを再生するクラスです。
-
-#### 主要メンバー関数（`WavSound` & `MidiPlayer` 共通）
-*   `bool Play(bool loop = false)`: 再生を開始します。`loop` を `true` にするとループ再生されます。
-*   `bool PlayLoop(double loopStartSeconds, double loopEndSeconds)`: 指定した秒数の範囲をループ再生します。
-*   `void Stop()`: 再生を停止します。
-*   `void Pause()` / `void Resume()`: 一時停止と再開。
-*   `void SetVolume(float volume)`: 音量を設定します（`0.0f` 〜 `1.0f`）。
-
-> [!NOTE]
-> `MidiPlayer` でループ再生を行う場合は、定期的に（ゲームのアップデートフレームごとに） `MidiPlayer::Update()` を呼び出す必要があります。
-
-#### 使用例
-```cpp
-#include "Dx11library/Dx11library.hpp"
-
-// 1. オーディオエンジンの初期化
-library::AudioEngine audioEngine;
-audioEngine.Initialize();
-
-// 2. 音源のロード
-library::WavSound seShoot;
-seShoot.LoadFile(audioEngine, L"sound/shoot.wav");
-
-library::MidiPlayer bgmTitle;
-bgmTitle.LoadFile(L"bgm/title.mid");
-
-// 3. 再生
-bgmTitle.Play(true); // MIDIをループ再生
-seShoot.Play(false); // SEを一発再生
-
-// 4. ループ内での更新処理（MIDIのループ再生用）
-while (app.PumpMessages())
-{
-    // ... ゲームロジックの更新 ...
-
-    bgmTitle.Update(); // MIDIのループ状態更新
+// 2D/3D 描画の後、App::EndFrame() の前
+if (fontRenderer.Begin(app)) {
+    font.Draw(fontRenderer, L"Score: 12345",
+              library::RectF(16.0f, 16.0f, 320.0f, 56.0f));
+    fontRenderer.End(app);
 }
 ```
 
----
+`FontRenderer::Begin` / `End` は描画セッションの状態に応じて `false` を返すことがあります。`Font` が利用する DirectWrite ファクトリーは初期化済み `FontRenderer` に由来するため、フォントはそのレンダラーより先に破棄してください。
 
-## 6. ユーティリティ (`File`)
+## オーディオ
 
-### `ReadBinaryFile` / `WriteBinaryFile`
-バイナリファイルを一括で読み込み・書き込みするシンプルなユーティリティ関数です。
+### `AudioEngine`
 
-*   `bool ReadBinaryFile(const char *path, std::vector<unsigned char> *data)`
-*   `bool ReadBinaryFile(const wchar_t *path, std::vector<unsigned char> *data)`
-*   `bool WriteBinaryFile(const char *path, const void *data, unsigned int size)`
+`AudioEngine` は XAudio2 とマスタリングボイスを所有します。WAV 音源を読み込む前に `Initialize()` を呼びます。初期化状態は `IsInitialized()` で確認でき、終了時には音源を解放してから `Shutdown()` を呼びます。`XAudio2()` と `MasteringVoice()` は内部オブジェクトへのポインターを返します。
 
----
+### `WavSound`
 
-## 7. ビルド方法
+`WavSound` は WAV データをメモリに保持し、XAudio2 で再生します。`LoadFile(engine, path)` は `char` または `wchar_t` のパスを受け取り、`LoadMemory(engine, data, size)` は WAV ファイル全体のバイト列を受け取ります。読み込み時には初期化済み `AudioEngine` を渡します。通常の PCM/WAVE 形式で、妥当な WAV ヘッダーと `fmt ` / `data` チャンクを含むデータが必要です。
 
-Windows 10/11 SDK と CMake がインストールされている環境でビルド可能です。
+`Play(loop)` は音源の先頭から再生し、`loop=true` なら全体を繰り返します。`PlayLoop(loopStartSeconds, loopEndSeconds)` は WAV 内の指定秒数区間を繰り返します。開始は 0 以上、終了は開始より後かつ音源の長さ以内でなければなりません。再生に関する共通操作は次のとおりです。
 
-```powershell
-# 構成ファイルの生成（例: out/build/x64-Debug）
-cmake -S . -B out/build/x64-Debug -G Ninja
+- `Stop()` は再生を停止してキューを空にします。
+- `Pause()` / `Resume()` は一時停止と再開です。
+- `SetVolume(volume)` は音量を設定します。値は内部で 0〜1 に制限されます。
+- `IsPlaying()` は再生バッファがキューにあるかを返します。一時停止中は `false` です。
+- `IsLooping()` と `Volume()` は現在のループ状態・音量を返します。
+- `Release()` はボイスと音声データを解放します。
 
-# ビルドの実行
-cmake --build out/build/x64-Debug
-```
+### `MidiPlayer`
 
-シンプルな構成（`out/build/x64-Debug` のような詳細指定なし）でも可能です。
+`MidiPlayer` は Windows MCI で Standard MIDI File（`.mid`）を再生します。`LoadFile(path)` は `char` または `wchar_t` のパス、`LoadMemory(data, size)` は MIDI ファイルのバイト列を受け取ります。ロード後は `Play(loop)`、`Stop`、`Pause`、`Resume`、`SetVolume`、`IsPlaying`、`IsLooping`、`Volume` を使えます。MIDI の音量はシステムの MIDI 出力にも反映されます。
 
-```powershell
-cmake -S . -B build
-cmake --build build --config debug
-```
-
----
-
-## 8. キーボード入力 (`Keyboard`)
-
-`Keyboard` は Windows 標準の `GetAsyncKeyState` を使用した、軽量なキーボード入力クラスです。
-ウィンドウハンドルを指定した場合、ウィンドウが非アクティブになると入力状態をリセットします。
-
-### 使用例
+MCI にはこのクラス独自の再生完了ループ設定がないため、`Play(true)` を使う場合はゲームループから定期的に `Update()` を呼びます。再生終了を検出すると先頭から再生し直します。`Release()` は MCI セッションを閉じ、`LoadMemory` が作成した一時ファイルも削除します。
 
 ```cpp
-#include "Dx11library/Dx11library.hpp"
+library::AudioEngine audio;
+if (!audio.Initialize()) return 1;
 
+library::WavSound effect;
+if (!effect.LoadFile(audio, L"assets/click.wav")) return 1;
+effect.SetVolume(0.7f);
+effect.Play();
+
+library::MidiPlayer music;
+if (!music.LoadFile(L"assets/theme.mid")) return 1;
+music.Play(true);
+
+while (app.PumpMessages()) {
+    music.Update(); // MIDI をループ再生する間、定期的に呼ぶ
+}
+
+// effect / music を audio.Shutdown() より先に解放する
+```
+
+## キーボード入力
+
+### `Keyboard` と `Key`
+
+`Keyboard` は `GetAsyncKeyState` を使い、最大 256 個の仮想キーコードについてフレームごとの状態を保持します。`Initialize(app.Window())` のようにウィンドウを渡すと、そのウィンドウがフォアグラウンドでない間はすべてのキーを離された状態として扱います。`Initialize()` または `Initialize(nullptr)` ならフォーカスによる絞り込みを行いません。
+
+ゲームループの各フレームで `Update()` を呼び、その後に状態を読みます。
+
+- `IsDown(key)`: 現在のフレームで押されている。
+- `WasPressed(key)`: 前フレームでは離されており、現在のフレームで押されている。
+- `WasReleased(key)`: 前フレームでは押されており、現在のフレームで離されている。
+
+引数は `Key` または Win32 の仮想キーコード（`unsigned int`）です。`Key` には矢印、Enter、Escape、Space、Shift、Control、Alt、F1〜F12 などが定義されています。定義外のキーも `'A'` などの仮想キーコードを直接指定できます。範囲外のコード（256 以上）は常に `false` です。初期化状態は `IsInitialized()`、対象ウィンドウは `Window()` で取得できます。`Shutdown()` は状態とウィンドウ指定をリセットします。
+
+```cpp
 library::Keyboard keyboard;
 keyboard.Initialize(app.Window());
 
-while (app.PumpMessages())
-{
+while (app.PumpMessages()) {
     keyboard.Update();
 
-    if (keyboard.IsDown(library::Key::Left))
-    {
-        // 左キーを押している間
+    if (keyboard.IsDown(library::Key::Left)) {
+        // 左キーを押している間の処理
     }
-
-    if (keyboard.WasPressed(library::Key::Space))
-    {
-        // スペースキーを押した瞬間
-    }
-
-    if (keyboard.WasReleased(library::Key::Space))
-    {
-        // スペースキーを離した瞬間
+    if (keyboard.WasPressed(library::Key::Space)) {
+        // Space キーを押したフレームだけの処理
     }
 }
-
-keyboard.Shutdown();
 ```
 
-`Update()` はゲームループの各フレームで呼び出してください。
+## バイナリファイルユーティリティ
 
-- `IsDown`: キーを押している間 `true`
-- `WasPressed`: 前フレームでは押されておらず、現在押されている場合に `true`
-- `WasReleased`: 前フレームでは押されており、現在離されている場合に `true`
+`File.hpp` の `ReadBinaryFile` はファイル全体を `std::vector<unsigned char>` に読み込みます。`char` と `wchar_t` のパスを指定できます。`WriteBinaryFile` は `char` のパスとバイト列を書き出します。
 
-`Key` に定義されていないキーは、Windows の仮想キーコードを直接渡して取得できます。
-キーボード入力は独立したクラスとして実装されているため、将来的にゲームパッド入力を追加できます。
+```cpp
+std::vector<unsigned char> bytes;
+if (library::ReadBinaryFile(L"assets/image.bin", &bytes)) {
+    // bytes.data() と bytes.size() を LoadMemory に渡せる
+}
+
+library::WriteBinaryFile("cache.bin", bytes.data(),
+                         static_cast<unsigned int>(bytes.size()));
+```
+
+読み込みは 4 GiB 未満に制限され、失敗時は `false` を返します。書き込み時、サイズが 0 より大きい場合はデータポインターが必要です。これらの関数はファイルをそのまま扱い、パス解決やアーカイブ検索は行いません。
+
+## ビルド
+
+CMake 3.16 以降、Windows 10/11 SDK、および C++17 対応コンパイラーで構成・ビルドします。プロジェクトでは静的ライブラリ `Dx11library`（別名 `Dx11library::Dx11library`）と、サンプル実行ファイル `library` を定義しています。
+
+```powershell
+cmake -S . -B build
+cmake --build build --config Debug
+```
+
+Ninja を使う場合はジェネレーターを指定します。
+
+```powershell
+cmake -S . -B out/build -G Ninja
+cmake --build out/build
+```
+
+アプリケーションのターゲットでは `Dx11library::Dx11library` をリンクし、公開ヘッダーのインクルードパスと必要な Windows ライブラリは CMake ターゲット経由で引き継がれます。
